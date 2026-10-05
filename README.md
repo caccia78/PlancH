@@ -5,6 +5,8 @@ area and thirteen addressable RGB LEDs on a black PCB that sits on your desk, ei
 rubber feet or on a 3D-printed stand. Powered by a Waveshare ESP32-S3-Zero running
 [ESPHome](https://esphome.io), with native Home Assistant integration.
 
+**📖 Documentation: [caccia78.github.io/PlancH](https://caccia78.github.io/PlancH/)**
+
 https://github.com/user-attachments/assets/00802e42-387a-4095-9ca5-fa8b80f6d39a
 
 *The video is also in [`media/`](media/) (MP4 and WebM).*
@@ -45,8 +47,12 @@ https://github.com/user-attachments/assets/00802e42-387a-4095-9ca5-fa8b80f6d39a
 5. **Print the desk stand** (optional): `mechanical/desk-stand/` has ready-to-print 3MF and
    STL files, see its [README](mechanical/desk-stand/README.md).
 
-Full documentation (assembly guide, Home Assistant setup, usage examples, browser-based
-firmware installation and a 3D viewer) is coming on the project website.
+The [project website](https://caccia78.github.io/PlancH/) has the full documentation:
+[components with shop links](https://caccia78.github.io/PlancH/build/components/),
+[PCB ordering](https://caccia78.github.io/PlancH/build/ordering/), a step-by-step
+[assembly guide](https://caccia78.github.io/PlancH/build/assembly/),
+[firmware](https://caccia78.github.io/PlancH/firmware/) and
+[Home Assistant](https://caccia78.github.io/PlancH/home-assistant/) setup.
 
 ## Repository layout
 
