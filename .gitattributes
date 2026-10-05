@@ -1,0 +1,2 @@
+# Generated production files: excluded from the GitHub language statistics
+production/** linguist-generated=true
