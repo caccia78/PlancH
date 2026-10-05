@@ -1,0 +1,10 @@
+<svg viewBox="0 0 330 110" class="ill" role="img" aria-label="Three steps to solder an 0805 passive">
+<g><rect x="10" y="60" width="90" height="16" class="ill-pcb"/><rect x="22" y="54" width="20" height="6" class="ill-cu"/><rect x="68" y="54" width="20" height="6" class="ill-cu"/>
+<path d="M22 54 Q32 44 42 54 Z" class="ill-solder"/><text x="55" y="96" class="ill-t">1 · tin one pad</text></g>
+<g transform="translate(110 0)"><rect x="10" y="60" width="90" height="16" class="ill-pcb"/><rect x="22" y="54" width="20" height="6" class="ill-cu"/><rect x="68" y="54" width="20" height="6" class="ill-cu"/>
+<rect x="30" y="44" width="50" height="10" class="ill-chip"/><path d="M22 54 Q26 46 32 46 L32 54 Z" class="ill-solder"/>
+<path d="M14 18 L32 42 M6 24 L28 44" class="ill-tw"/><text x="55" y="96" class="ill-t">2 · slide in and reflow</text></g>
+<g transform="translate(220 0)"><rect x="10" y="60" width="90" height="16" class="ill-pcb"/><rect x="22" y="54" width="20" height="6" class="ill-cu"/><rect x="68" y="54" width="20" height="6" class="ill-cu"/>
+<rect x="30" y="44" width="50" height="10" class="ill-chip"/><path d="M22 54 Q26 46 32 46 L32 54 Z M88 54 Q84 46 78 46 L78 54 Z" class="ill-solder"/>
+<text x="55" y="96" class="ill-t">3 · solder the other side</text></g>
+</svg>

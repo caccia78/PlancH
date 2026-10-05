@@ -1,0 +1,85 @@
+/* PlancH documentation: hero video, figures and the PCB diagrams of the assembly guide. */
+
+.hero-video {
+  width: 100%;
+  border-radius: 0.4rem;
+  margin: 0.5rem 0 1rem;
+  background: #000;
+}
+
+.md-typeset figure img {
+  border-radius: 0.3rem;
+}
+
+/* Diagram colours (light and dark scheme) */
+:root {
+  --pl-pcb: #2b211c; --pl-pcb-edge: #0d0b0a; --pl-pad: #a6a39e; --pl-pad-hl: #ff8a2b;
+  --pl-pin1: #3fb6ff; --pl-chain: #5fd0ff; --pl-win: #f6f4f0; --pl-label: #ffffff;
+  --pl-ill-cu: #c9963a; --pl-ill-pcb: #3a2e26; --pl-ill-solder: #b9bcc2;
+  --pl-surface-2: #efebe4; --pl-text: #1d1b19; --pl-muted: #5f5a53; --pl-warn: #b3261e;
+  --pl-accent: #d9661a;
+}
+[data-md-color-scheme="slate"] {
+  --pl-win: #1e2129; --pl-surface-2: #2b2f3a; --pl-text: #e2e4e9; --pl-muted: #a0a4ad;
+  --pl-warn: #ff7a70; --pl-accent: #ff8a3d;
+}
+
+figure.diagram {
+  width: 100%;
+  margin: 1rem 0;
+  padding: 0.6rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.4rem;
+}
+figure.diagram figcaption { max-width: none; }
+
+svg.board { width: 100%; height: auto; display: block; }
+svg.board .pcb-edge { fill: var(--pl-pcb); stroke: var(--pl-pcb-edge); stroke-width: .35; }
+svg.board .win { fill: var(--pl-win); stroke: #888; stroke-width: .15; }
+svg.board .win.hl { stroke: var(--pl-pad-hl); stroke-width: .45; }
+svg.board .pad { fill: var(--pl-pad); opacity: .55; }
+svg.board .pad.hl { fill: var(--pl-pad-hl); opacity: 1; }
+svg.board .body { fill: none; stroke: #f3efe7; stroke-width: .25; stroke-dasharray: .6 .4; }
+svg.board .pin1 { fill: none; stroke: var(--pl-pin1); stroke-width: .4; }
+svg.board .lbl { font: 600 2.1px system-ui, sans-serif; fill: var(--pl-label); text-anchor: middle;
+  paint-order: stroke; stroke: var(--pl-pcb); stroke-width: .5px; }
+svg.board .lbl.big { font-size: 3.2px; }
+svg.board .lbl.note { font-size: 0.95px; fill: var(--pl-pin1); }
+svg.board .lbl.side { fill: var(--pl-muted); stroke: none; font-size: 2.3px; text-anchor: start; }
+svg.board .lbl.foot-l { fill: #9ad; font-size: 2px; }
+svg.board .foot { fill: none; stroke: #9ad; stroke-width: .3; stroke-dasharray: 1 .6; }
+svg.board .touch { fill: none; stroke: #bbb; stroke-width: .25; }
+svg.board .touch.hl { stroke: var(--pl-pad-hl); }
+svg.board .chain { fill: none; stroke: var(--pl-chain); stroke-width: .35; }
+svg.board .chain-head { fill: var(--pl-chain); }
+
+svg.ill { width: 100%; max-width: 560px; height: auto; display: block; margin: 0 auto; }
+svg.ill .ill-table { fill: var(--pl-surface-2); }
+svg.ill .ill-pcb { fill: var(--pl-ill-pcb); }
+svg.ill .ill-mask { fill: #111; }
+svg.ill .ill-cu { fill: var(--pl-ill-cu); }
+svg.ill .ill-body { fill: #f1f1f1; stroke: #999; }
+svg.ill .ill-body5 { fill: #f4f4f0; stroke: #999; }
+svg.ill .ill-lens { fill: #ffe9a8; }
+svg.ill .ill-leg { fill: none; stroke: #bdbdbd; stroke-width: 3; }
+svg.ill .ill-solder { fill: var(--pl-ill-solder); }
+svg.ill .ill-light { fill: none; stroke: #f5b400; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+svg.ill .ill-arrow { fill: none; stroke: var(--pl-muted); stroke-width: 1; stroke-dasharray: 3 3; }
+svg.ill .ill-pt { fill: none; stroke: var(--pl-muted); stroke-width: .8; }
+svg.ill .ill-t { font: 9.5px system-ui, sans-serif; fill: var(--pl-text); text-anchor: middle; }
+svg.ill .ill-mod, svg.ill .ill-modb { fill: #2457a8; }
+svg.ill .ill-glass { fill: #222; }
+svg.ill .ill-hdr { fill: #111; }
+svg.ill .ill-pin { stroke: var(--pl-ill-cu); stroke-width: 3; }
+svg.ill .ill-cut { stroke: var(--pl-warn); stroke-width: 1.5; stroke-dasharray: 4 3; }
+svg.ill .ill-spacer { fill: none; stroke: var(--pl-accent); stroke-width: 2; stroke-dasharray: 5 3; }
+svg.ill .ill-iron { fill: #8c8f96; }
+svg.ill .ill-wire { fill: none; stroke: #cfd2d6; stroke-width: 3; stroke-linecap: round; }
+svg.ill .ill-chip { fill: #6d5848; }
+svg.ill .ill-tw { stroke: var(--pl-muted); stroke-width: 2.5; stroke-linecap: round; }
+
+/* Diagram legend */
+.legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; font-size: 0.7rem;
+  color: var(--md-default-fg-color--light); margin: 0.4rem 0 1rem; }
+.legend i { display: inline-block; width: 0.8rem; height: 0.8rem; border-radius: 2px;
+  margin-right: 0.35rem; vertical-align: -0.12rem; }

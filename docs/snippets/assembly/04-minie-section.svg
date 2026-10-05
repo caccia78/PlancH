@@ -1,0 +1,18 @@
+<svg viewBox="0 0 320 170" class="ill" role="img" aria-label="Cross-section of the reverse-mount LED in its window">
+<rect x="10" y="118" width="300" height="10" class="ill-table"/>
+<text x="160" y="158" class="ill-t">work surface: the front rests here</text>
+<rect x="30" y="88" width="105" height="30" class="ill-pcb"/><rect x="185" y="88" width="105" height="30" class="ill-pcb"/>
+<rect x="30" y="86" width="105" height="2" class="ill-mask"/><rect x="185" y="86" width="105" height="2" class="ill-mask"/>
+<rect x="108" y="82" width="22" height="5" class="ill-cu"/><rect x="190" y="82" width="22" height="5" class="ill-cu"/>
+<rect x="142" y="78" width="36" height="32" rx="2" class="ill-body"/>
+<rect x="146" y="104" width="28" height="6" rx="2" class="ill-lens"/>
+<path d="M142 80 H118 V82 M178 80 H202 V82" class="ill-leg"/>
+<path d="M112 82 L118 77 L126 82 Z M194 82 L202 77 L208 82 Z" class="ill-solder"/>
+<path d="M160 113 V136 M154 128 L160 136 L166 128" class="ill-light"/>
+<text x="82" y="106" class="ill-t">PCB</text><text x="238" y="106" class="ill-t">PCB</text>
+<text x="160" y="24" class="ill-t">back (facing up): pads and joints</text>
+<path d="M160 30 V74" class="ill-arrow"/>
+<text x="60" y="66" class="ill-t">pad</text><path d="M78 70 L112 82" class="ill-pt"/>
+<text x="262" y="66" class="ill-t">leg</text><path d="M248 70 L204 79" class="ill-pt"/>
+<text x="214" y="138" class="ill-t">lens → front</text>
+</svg>

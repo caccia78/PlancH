@@ -20,3 +20,8 @@ __pycache__/
 # System
 Thumbs.db
 .DS_Store
+
+# Documentation: build output and files copied by hooks/media.py
+site/
+docs/media/
+docs/production/

@@ -1,0 +1,14 @@
+<svg viewBox="0 0 330 160" class="ill" role="img" aria-label="Mounting the OLED module with a spacer">
+<rect x="20" y="104" width="290" height="14" class="ill-pcb"/>
+<rect x="30" y="56" width="270" height="6" class="ill-modb"/>
+<rect x="80" y="46" width="200" height="10" class="ill-glass"/>
+<rect x="44" y="62" width="26" height="42" class="ill-hdr"/>
+<path d="M52 50 V122 M62 50 V122" class="ill-pin"/>
+<path d="M44 122 H72" class="ill-cut"/>
+<rect x="262" y="62" width="26" height="42" class="ill-spacer"/>
+<text x="180" y="40" class="ill-t">display glass</text>
+<text x="57" y="140" class="ill-t">pins trimmed flush</text>
+<text x="275" y="140" class="ill-t">temporary spacer</text>
+<text x="160" y="85" class="ill-t">header plastic ≈ 2.5 mm</text>
+<text x="165" y="114" class="ill-t">PlancH PCB</text>
+</svg>

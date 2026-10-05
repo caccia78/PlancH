@@ -1,0 +1,10 @@
+<svg viewBox="0 0 320 140" class="ill" role="img" aria-label="Soldering a 5050 LED">
+<rect x="10" y="92" width="300" height="18" class="ill-pcb"/><rect x="10" y="90" width="300" height="2" class="ill-mask"/>
+<rect x="56" y="86" width="64" height="5" class="ill-cu"/><rect x="200" y="86" width="64" height="5" class="ill-cu"/>
+<rect x="84" y="40" width="152" height="46" rx="3" class="ill-body5"/>
+<rect x="78" y="56" width="10" height="30" class="ill-cu"/><rect x="232" y="56" width="10" height="30" class="ill-cu"/>
+<path d="M60 86 L78 66 L78 86 Z M260 86 L242 66 L242 86 Z" class="ill-solder"/>
+<path d="M18 30 L44 22 L64 84 L56 86 Z" class="ill-iron"/>
+<text x="160" y="66" class="ill-t">LED 5050</text>
+<text x="160" y="128" class="ill-t">heat the pad outside the body: solder flows under the lead</text>
+</svg>

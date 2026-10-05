@@ -1,0 +1,99 @@
+site_name: PlancH
+site_description: Open source desk button panel for Home Assistant, built on the ESP32-S3 and ESPHome.
+site_author: Vincenzo Cacciatore
+site_url: https://caccia78.github.io/PlancH/
+repo_url: https://github.com/caccia78/PlancH
+repo_name: caccia78/PlancH
+edit_uri: edit/main/docs/
+copyright: >
+  © 2026 Vincenzo Cacciatore · Hardware CERN-OHL-S v2 · Firmware MIT · Documentation CC BY-SA 4.0
+
+theme:
+  name: material
+  icon:
+    logo: material/gesture-tap-button
+    repo: fontawesome/brands/github
+  favicon: assets/favicon.svg
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: deep orange
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: deep orange
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+    - toc.follow
+
+extra_css:
+  - stylesheets/extra.css
+
+extra:
+  # Amazon Associates tracking ID (for example "planch-21"). Empty = plain links.
+  amazon_tag: ""
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/caccia78/PlancH
+
+hooks:
+  - hooks/media.py
+
+plugins:
+  - search
+  - macros:
+      include_yaml:
+        - components: docs/data/components.yml
+
+exclude_docs: |
+  data/
+  snippets/
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.snippets:
+      base_path: [docs/snippets, .]
+      check_paths: true
+
+nav:
+  - Home: index.md
+  - Build:
+      - build/index.md
+      - Components: build/components.md
+      - Ordering the PCB: build/ordering.md
+      - Assembly: build/assembly.md
+  - Accessories:
+      - accessories/index.md
+      - Desk stand: accessories/desk-stand.md
+  - Firmware: firmware/index.md
+  - Home Assistant: home-assistant/index.md
+  - About:
+      - License: about/license.md
+      - Changelog: about/changelog.md

@@ -1,0 +1,90 @@
+# PlancH bill of materials for the documentation (one board).
+# Shops: digikey, aliexpress, amazon (amazon: ASIN on amazon.it, the affiliate tag is added
+# from extra.amazon_tag in mkdocs.yml). Links checked on 2026-10-03; listings change, check
+# the variant before buying.
+- ref: U1
+  name: Waveshare ESP32-S3-Zero
+  detail: without headers soldered (not the "Zero-M" variant)
+  qty: 1
+  side: Front
+  package: Castellated module
+  links:
+    - {shop: aliexpress, id: "1005013189208938", label: "1 pc"}
+    - {shop: aliexpress, id: "1005009685443286", label: "3 pcs"}
+    - {shop: amazon, id: B0CHYHGYRH, label: "1 pc"}
+    - {shop: amazon, id: B0CSK8B4GS, label: "2 pcs"}
+- ref: U2
+  name: 0.96" OLED module, SSD1306, I²C, white
+  detail: "24.8 × 26.9 mm, 4 pins in this order: GND, VIN, SCK, SDA (some modules swap GND and VIN: check before buying)"
+  qty: 1
+  side: Front
+  package: 4-pin header
+  links: []
+- ref: SW1–SW10
+  name: Tactile switch 6 × 6 × 4.3 mm SMD, gull-wing
+  detail: "C&K PTS645SH43SMTR92 LFS (160 gf) or PTS645SL43SMTR92 LFS (black actuator, 130 gf). Generic 6×6×4.3 SMD switches work if their pad layout matches"
+  mpn: PTS645SH43SMTR92 LFS
+  qty: 10
+  side: Front
+  package: 6 × 6 mm SMD
+  links:
+    - {shop: digikey, url: "https://www.digikey.com/en/products/detail/c-k/PTS645SL43SMTR92-LFS/7645250", label: "PTS645SL43 (black)"}
+    - {shop: digikey, url: "https://www.digikey.com/en/products/detail/c-k/PTS645SH43SMTR92-LFS/1145472", label: "PTS645SH43"}
+    - {shop: aliexpress, id: "1005005845072975", label: "generic, 20/50 pcs"}
+- ref: D1–D7
+  name: SK6812MINI-E addressable RGB LED, reverse mount
+  mpn: SK6812MINI-E
+  qty: 7
+  side: Back
+  package: 3.2 × 2.8 mm
+  links:
+    - {shop: aliexpress, id: "1005007576573654", label: "100 pcs"}
+    - {shop: digikey, url: "https://www.digikey.com/short/zhvb3bff", label: "Adafruit 4960, 10 pcs"}
+    - {shop: amazon, id: B0F3JSQRV3, label: "5 pcs"}
+- ref: D8–D13
+  name: 5050 addressable RGB LED (RGB, not RGBW)
+  detail: SK6812 5050 (SKC6812RV) or WS2812B. The WS2812B is mounted rotated by 180°, see the assembly guide
+  mpn: SKC6812RV
+  qty: 6
+  side: Back
+  package: PLCC4 5 × 5 mm
+  links:
+    - {shop: aliexpress, id: "1005001835638842", label: 'choose "5050 RGB"'}
+    - {shop: digikey, url: "https://www.digikey.com/en/products/detail/adafruit-industries-llc/1655/5154679", label: "Adafruit 1655, 10 pcs"}
+- ref: R1
+  name: Resistor 330 Ω
+  mpn: RC0805FR-07330RL
+  qty: 1
+  side: Back
+  package: "0805"
+  links:
+    - {shop: digikey, url: "https://www.digikey.com/en/products/detail/yageo/RC0805FR-07330RL/727866", label: Yageo}
+    - {shop: aliexpress, id: "32889010656", label: "100 pcs, choose 330R"}
+- ref: C1–C13
+  name: Capacitor 100 nF X7R 50 V
+  mpn: CL21B104KBCNNNC
+  qty: 13
+  side: Back
+  package: "0805"
+  links:
+    - {shop: digikey, url: "https://www.digikey.com/en/products/detail/samsung-electro-mechanics/CL21B104KBCNNNC/3886661", label: Samsung}
+    - {shop: aliexpress, id: "32948059558", label: "100 pcs"}
+    - {shop: amazon, id: B0C3MB18BF, label: "100 pcs"}
+- ref: C14
+  name: Capacitor 47 µF X5R 10 V
+  detail: TDK C3216X5R1A476M160AB is an equivalent
+  mpn: CL31A476MPHNNNE
+  qty: 1
+  side: Back
+  package: "1206"
+  links:
+    - {shop: digikey, url: "https://www.digikey.com/en/products/detail/samsung-electro-mechanics/CL31A476MPHNNNE/3888721", label: Samsung}
+    - {shop: digikey, url: "https://www.digikey.it/it/products/detail/tdk/C3216X5R1A476M160AB/2443484", label: TDK}
+    - {shop: aliexpress, id: "1005007464553853", label: "50 pcs, choose 1206 47 µF"}
+- ref: "—"
+  name: Clear adhesive rubber feet, Ø 10 × 5 mm
+  qty: 6
+  side: Back
+  package: Adhesive
+  links:
+    - {shop: aliexpress, id: "32845583128", label: "10 × 5 mm"}
