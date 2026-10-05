@@ -1,0 +1,22 @@
+# ESPHome: credentials and build cache
+firmware/secrets.yaml
+firmware/.esphome/
+
+# KiCad: backups, locks and local caches
+*-backups/
+*.kicad_prl
+*.lck
+~*.lck
+fp-info-cache
+*.bak
+_autosave-*
+\#auto_saved_files#
+hardware/planch/.history/
+
+# Python
+__pycache__/
+*.pyc
+
+# System
+Thumbs.db
+.DS_Store

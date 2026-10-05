@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "planch")(type "KiCad")(uri "${KIPRJMOD}/../lib/planch.pretty")(options "")(descr "PlancH: custom footprints"))
+)

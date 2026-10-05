@@ -1,0 +1,25 @@
+(version 1)
+
+# PlancH custom design rules (keep-out areas).
+# The ANTENNA_KEEPOUT, TOUCH_KEEPOUT and FOOT_Fn_KEEPOUT rule areas already forbid vias and zones;
+# these rules restrict which tracks and components are allowed inside them.
+
+(rule "Antenna: solo le piste di uscita di GP5-GP8"
+	(condition "A.Type == 'Track' && A.intersectsArea('ANTENNA_KEEPOUT') && A.NetName != '/BTN_OK' && A.NetName != '/BTN_S4' && A.NetName != '/BTN_S3' && A.NetName != '/BTN_S2'")
+	(constraint disallow track))
+
+(rule "Antenna: nessun componente oltre U1"
+	(condition "A.Type == 'Footprint' && A.Reference != 'U1' && A.intersectsArea('ANTENNA_KEEPOUT')")
+	(constraint disallow footprint))
+
+(rule "Touch: solo la pista TOUCH, solo su F.Cu"
+	(condition "A.Type == 'Track' && A.intersectsArea('TOUCH_KEEPOUT') && (A.NetName != '/TOUCH' || A.Layer != 'F.Cu')")
+	(constraint disallow track))
+
+(rule "Touch: nessun componente oltre E1"
+	(condition "A.Type == 'Footprint' && A.Reference != 'E1' && A.intersectsArea('TOUCH_KEEPOUT')")
+	(constraint disallow footprint))
+
+(rule "GND: un raggio di raccordo termico basta"
+	(condition "A.Type == 'Pad' && A.NetName == 'GND'")
+	(constraint min_resolved_spokes 1))

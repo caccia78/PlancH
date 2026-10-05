@@ -1,0 +1,195 @@
+(footprint "OLED_SSD1306_0.96in_I2C_24.8x26.9mm"
+	(version 20260206)
+	(generator "pcbnew")
+	(generator_version "10.0")
+	(layer "F.Cu")
+	(descr "0.96in SSD1306 I2C OLED module 24.8x26.9mm, 4 pins GND VIN SCK SDA 2.54mm pitch, row centred 1.3mm from the top edge")
+	(tags "OLED SSD1306 I2C 128x64 module")
+	(property "Reference" "REF**"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "eaddb175-cb37-43f0-a860-95e143e88e48")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "OLED_SSD1306_0.96in_I2C_24.8x26.9mm"
+		(at 0 14.95 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "595ef0f7-a03a-4c18-a441-8696e420fa0c")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "9bc57891-6e8f-40c8-bedb-591661fa9a91")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "a8c68b54-b536-4195-8934-687a7660a5f7")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr through_hole)
+	(duplicate_pad_numbers_are_jumpers no)
+	(pad "1" thru_hole rect
+		(at -3.81 -12.15)
+		(size 1.7 1.7)
+		(drill 1)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "a6be04ba-cee3-405f-bf50-c60e3787d232")
+	)
+	(pad "2" thru_hole circle
+		(at -1.27 -12.15)
+		(size 1.7 1.7)
+		(drill 1)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "e87acf18-5356-4060-be3e-c86ea6b1d825")
+	)
+	(pad "3" thru_hole circle
+		(at 1.27 -12.15)
+		(size 1.7 1.7)
+		(drill 1)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "261413c9-7608-4652-bc18-ccbd3ed7e238")
+	)
+	(pad "4" thru_hole circle
+		(at 3.81 -12.15)
+		(size 1.7 1.7)
+		(drill 1)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "76d799d2-1d4e-4ecf-af35-6b162f33f7c0")
+	)
+	(fp_rect
+		(start -12.4 -13.45)
+		(end 12.4 13.45)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.Fab")
+		(uuid "7dd6547c-db09-4636-9e72-c06a1b783c72")
+	)
+	(fp_line
+		(start -12.4 -12.45)
+		(end -11.4 -13.45)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(layer "F.Fab")
+		(uuid "0f488ec7-d80b-463a-b1c4-433f139e21b6")
+	)
+	(fp_rect
+		(start -11.9 -9.45)
+		(end 11.9 10.45)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.Fab")
+		(uuid "690b5120-682a-422f-b1cb-aa9550ae5ae3")
+	)
+	(fp_text user "GND"
+		(at -3.81 -10.35 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "729b037b-a741-4aee-8929-c99ac63ec5c6")
+		(effects
+			(font
+				(size 0.6 0.6)
+				(thickness 0.1)
+			)
+		)
+	)
+	(fp_text user "VIN"
+		(at -1.27 -10.35 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "6bf25ac6-34e7-4553-a7c1-c170341432eb")
+		(effects
+			(font
+				(size 0.6 0.6)
+				(thickness 0.1)
+			)
+		)
+	)
+	(fp_text user "SCK"
+		(at 1.27 -10.35 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "9b4d71ee-096b-4f1c-8ca2-6d16de3f5c57")
+		(effects
+			(font
+				(size 0.6 0.6)
+				(thickness 0.1)
+			)
+		)
+	)
+	(fp_text user "SDA"
+		(at 3.81 -10.35 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "3efb6f0f-6ed8-40fc-8bb1-e5f93fb74329")
+		(effects
+			(font
+				(size 0.6 0.6)
+				(thickness 0.1)
+			)
+		)
+	)
+	(fp_rect
+		(start -12.65 -13.7)
+		(end 12.65 13.7)
+		(stroke
+			(width 0.05)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.CrtYd")
+		(uuid "40a52030-f052-4680-8f96-ccf52bcf7bb8")
+	)
+	(embedded_fonts no)
+	(model "${KIPRJMOD}/../lib/3dmodels/OLED_SSD1306_0.96in_I2C_24.8x26.9mm.step"
+		(offset
+			(xyz 0 0 0)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz 0 0 0)
+		)
+	)
+)
