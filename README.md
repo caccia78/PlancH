@@ -5,9 +5,9 @@ area and thirteen addressable RGB LEDs on a black PCB that sits on your desk, ei
 rubber feet or on a 3D-printed stand. Powered by a Waveshare ESP32-S3-Zero running
 [ESPHome](https://esphome.io), with native Home Assistant integration.
 
-[![PlancH on its desk stand](media/planch-video-poster.png)](media/planch-video.mp4)
+https://github.com/user-attachments/assets/00802e42-387a-4095-9ca5-fa8b80f6d39a
 
-*Click the image to watch the video.*
+*The video is also in [`media/`](media/) (MP4 and WebM).*
 
 > **Status: Rev. 1, prototypes on order.** The design is complete and passes ERC/DRC, but the
 > first boards have not been assembled and tested yet. Build one if you like to tinker, and
