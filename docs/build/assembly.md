@@ -4,8 +4,7 @@ From the bare PCB to a working button panel: work order, technique for each part
 the difficult ones and a test at every step.
 
 **44 components + 6 feet · 2–3 hours for the first board · everything solderable with a
-regular iron.** The [interactive BOM](../production/planch-ibom.html) highlights every part on
-the board and lets you tick them off as you go.
+regular iron.**
 
 <figure markdown="span">
   ![PlancH, assembled](../assets/assembly/overview.jpg)

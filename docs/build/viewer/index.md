@@ -22,7 +22,7 @@ The 3D model includes:
 
 ## Desk stand
 
-The desk stand (leggio) is designed to hold PlancH at a 20° angle. You can [learn more](../accessories/desk-stand.md) about printing and assembling it.
+The desk stand (leggio) is designed to hold PlancH at a 20° angle. You can [learn more](../../accessories/desk-stand.md) about printing and assembling it.
 
 ## Source files
 
