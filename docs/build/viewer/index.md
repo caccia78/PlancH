@@ -2,14 +2,12 @@
 
 Explore the complete PlancH circuit board in 3D. Rotate, zoom, and inspect every component, connection, and detail.
 
-## View the 3D model
+<iframe src="../../assets/viewer-3d.html" style="width: 100%; height: 600px; border: 1px solid #ddd; border-radius: 8px; margin: 2rem 0;"></iframe>
 
-[**Open 3D Viewer** →](../../assets/viewer-3d.html){: .md-button .md-button--primary }
-
-The viewer opens in a full window. Use your mouse to:
+Use your mouse to:
 
 - **Rotate** — Click and drag
-- **Zoom** — Scroll wheel
+- **Zoom** — Scroll wheel  
 - **Pan** — Right-click and drag
 
 ## About this model
