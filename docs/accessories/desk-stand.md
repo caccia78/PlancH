@@ -53,26 +53,10 @@ is suggested by the glowing light slots.
 
 <script>
   planchLeds("leggio-3d", "leggio-led-controlli");
-  (() => {
-    const viewer = document.getElementById("leggio-3d");
-    const boardButton = document.getElementById("leggio-scheda");
-    const models = {
-      false: "/PlancH/assets/leggio-viewer.glb",
-      true: "/PlancH/assets/leggio-assieme-viewer.glb",
-    };
-    boardButton.addEventListener("click", () => {
-      const show = boardButton.getAttribute("aria-pressed") !== "true";
-      const orbit = viewer.getCameraOrbit();
-      viewer.addEventListener("load", () => {
-        viewer.cameraOrbit = `${orbit.theta}rad ${orbit.phi}rad ${orbit.radius}m`;
-        viewer.jumpCameraToGoal();
-      }, { once: true });
-      viewer.src = models[show];
-      boardButton.setAttribute("aria-pressed", String(show));
-      boardButton.textContent = show ? "Hide the board" : "Show the board";
-      document.getElementById("leggio-led-controlli").hidden = !show;
-    });
-  })();
+  planchBoardToggle("leggio-3d", "leggio-scheda", {
+    parts: "/PlancH/assets/leggio-viewer.glb",
+    board: "/PlancH/assets/leggio-assieme-viewer.glb",
+  }, "leggio-led-controlli");
 </script>
 
 ## Files

@@ -12,6 +12,10 @@ scheda, la parete sta verso -Z.
 Uso (dalla radice del repository):
     uv run --no-project --python 3.12 --with build123d --with pyvista --with shapely \\
         python mechanical/parete.py [--render]
+
+Con --viewer <GLB della scheda> scrive anche parete.glb e parete-assieme.glb per il viewer
+3D del sito (servono trimesh e pillow); la scheda è output/planch-viewer.glb di
+tools/viewer_glb.py.
 """
 
 import argparse
@@ -141,6 +145,77 @@ def esporta(staffa, base):
         m.write(str(USCITA / f"{nome}.3mf"))
 
 
+def esporta_glb(scheda_glb, staffa, base):
+    """GLB per il viewer 3D del sito, in metri con Y in alto (glTF). Appesa, l'alto della
+    parete è già Y e Z punta verso chi guarda: basta la scala. La scheda viene da
+    tools/viewer_glb.py, nel sistema di kicad-cli (scheda orizzontale): si raddrizza.
+    - parete.glb: muro, base e staffa staccata di 15 mm, per vedere i due pezzi;
+    - parete-assieme.glb: scheda appesa con l'alone della retroilluminazione sul muro
+      (materiale luce_retro, che il viewer accende con i LED del retro)."""
+    import numpy as np
+    import trimesh
+    from PIL import Image
+    from trimesh.visual.material import PBRMaterial
+
+    metri = np.diag([0.001, 0.001, 0.001, 1.0])
+    kicad = metri @ np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, -1, 0, 0], [0, 0, 0, 1]], dtype=float)
+
+    def mesh(forma, nome, colore, sposta=0.0):
+        v, t = forma.translate((0, 0, sposta)).tessellate(0.05, 0.2)
+        m = trimesh.Trimesh(np.array([(q.X, q.Y, q.Z) for q in v]), np.array(t), process=False)
+        m.apply_transform(metri)
+        m.vertex_normals   # calcolate qui, così l'export le include
+        m.visual = trimesh.visual.TextureVisuals(material=PBRMaterial(
+            name=nome, baseColorFactor=colore, metallicFactor=0.0, roughnessFactor=0.7))
+        return m
+
+    def rettangolo(x0, y0, x1, y1, z):
+        v = np.array([(x0, y0, z), (x1, y0, z), (x1, y1, z), (x0, y1, z)], dtype=float) * 0.001
+        return trimesh.Trimesh(v, [[0, 1, 2], [0, 2, 3]], process=False)
+
+    # Muro un po' più grande della scheda, appena dietro la base
+    x0, x1, y0, y1 = -20.0, 140.0, -66.0, 22.0   # coordinate STEP (Y = -Y di SPEC)
+    muro = rettangolo(x0, y0, x1, y1, Z_BASE - 0.05)
+    muro.visual = trimesh.visual.TextureVisuals(material=PBRMaterial(
+        name="muro", baseColorFactor=[0.45, 0.45, 0.44, 1.0], metallicFactor=0.0, roughnessFactor=0.95))   # grigio chiaro: stacca dal PLA bianco
+    colore_base, colore_staffa = [0.807, 0.791, 0.753, 1.0], [0.807, 0.791, 0.753, 1.0]   # PLA #e8e6e1
+
+    pezzi = trimesh.Scene()
+    pezzi.add_geometry(muro, node_name="muro", geom_name="muro")
+    pezzi.add_geometry(mesh(base, "base", colore_base), node_name="base", geom_name="base")
+    pezzi.add_geometry(mesh(staffa, "staffa", colore_staffa, 15), node_name="staffa", geom_name="staffa")
+    pezzi.export(str(USCITA / "parete.glb"), include_normals=True)
+
+    # Alone: una macchia gaussiana per LED del retro, su un piano davanti al muro; la
+    # texture dà la forma (alfa) e l'intensità (emissione), il viewer ne cambia il colore
+    px = 4   # pixel per mm
+    xs = np.arange(x0, x1, 1 / px) + 0.5 / px
+    ys = np.arange(y1, y0, -1 / px) - 0.5 / px
+    gx, gy = np.meshgrid(xs, ys)
+    luce = np.zeros_like(gx)
+    for lx, ly in LED_RETRO_SPEC:
+        qx, qy = p(lx, ly)
+        luce += np.exp(-((gx - qx) ** 2 + (gy - qy) ** 2) / (2 * 14.0 ** 2))
+    luce = np.clip(luce / 1.2, 0, 1) ** 1.5
+    a8 = (luce * 255).astype(np.uint8)
+    alfa = Image.fromarray(np.dstack([np.full_like(a8, 255)] * 3 + [a8]), "RGBA")
+    emissione = Image.fromarray(np.dstack([a8] * 3), "RGB")
+    alone = rettangolo(x0, y0, x1, y1, Z_BASE + 0.3)
+    alone.visual = trimesh.visual.TextureVisuals(
+        uv=np.array([(0, 0), (1, 0), (1, 1), (0, 1)], dtype=float),
+        material=PBRMaterial(name="luce_retro", baseColorFactor=[1.0, 1.0, 1.0, 0.0],
+                             baseColorTexture=alfa, emissiveTexture=emissione,
+                             metallicFactor=0.0, roughnessFactor=1.0, alphaMode="BLEND"))
+
+    assieme = trimesh.load(str(scheda_glb), force="scene")
+    assieme.apply_transform(metri @ np.linalg.inv(kicad))
+    assieme.add_geometry(muro, node_name="muro", geom_name="muro")
+    assieme.add_geometry(alone, node_name="luce_retro", geom_name="luce_retro")
+    assieme.add_geometry(mesh(base, "base", colore_base), node_name="base", geom_name="base")
+    assieme.add_geometry(mesh(staffa, "staffa", colore_staffa), node_name="staffa", geom_name="staffa")
+    assieme.export(str(USCITA / "parete-assieme.glb"), include_normals=True)
+
+
 def render(parti, nome, direzione, su=(0, 1, 0)):
     """Render di controllo con PyVista (VTK), fuori schermo; direzione = da dove si guarda."""
     import numpy as np
@@ -183,6 +258,8 @@ if __name__ == "__main__":
     a.add_argument("--uscita", "--out", dest="uscita", type=Path, default=USCITA,
                    help="cartella dei file generati / output folder")
     a.add_argument("--render", action="store_true", help="genera anche i PNG di controllo")
+    a.add_argument("--viewer", type=Path, metavar="GLB_SCHEDA",
+                   help="GLB della scheda (tools/viewer_glb.py): scrive anche i GLB per il viewer 3D del sito")
     args = a.parse_args()
     STEP_SCHEDA, USCITA = args.scheda.resolve(), args.uscita.resolve()
 
@@ -193,6 +270,8 @@ if __name__ == "__main__":
               f"volume {forma.volume / 1000:.1f} cm³, solidi {len(forma.solids())}")
     print(f"Distanza scheda-parete: {-Z_BASE:.1f} mm")
     esporta(staffa, base)
+    if args.viewer:
+        esporta_glb(args.viewer.resolve(), staffa, base)
     if args.render:
         render([(staffa, "#e8e6e1"), (base.translate((0, 0, -25)), "#cfd8dc")],
                "parete-render.png", (0.45, -0.55, -0.7))

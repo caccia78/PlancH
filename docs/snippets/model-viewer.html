@@ -72,3 +72,23 @@
     });
   }
 </script>
+<!-- "Show the board" button: swaps the viewer between two models keeping the camera angle,
+     and shows the LED controls only with the board -->
+<script>
+  function planchBoardToggle(viewerId, buttonId, models, controlsId) {
+    const viewer = document.getElementById(viewerId);
+    const button = document.getElementById(buttonId);
+    button.addEventListener("click", () => {
+      const show = button.getAttribute("aria-pressed") !== "true";
+      const orbit = viewer.getCameraOrbit();
+      viewer.addEventListener("load", () => {
+        viewer.cameraOrbit = `${orbit.theta}rad ${orbit.phi}rad ${orbit.radius}m`;
+        viewer.jumpCameraToGoal();
+      }, { once: true });
+      viewer.src = show ? models.board : models.parts;
+      button.setAttribute("aria-pressed", String(show));
+      button.textContent = show ? "Hide the board" : "Show the board";
+      document.getElementById(controlsId).hidden = !show;
+    });
+  }
+</script>

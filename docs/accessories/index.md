@@ -13,17 +13,19 @@ to your printer, your board thickness or your desk.
 
     Holds the board at 20° on the desk, with light slots for the backlight.
 
--   :material-magnet: **Magnetic mount** *(planned)*
+-   :material-wall: **[Wall mount](wall-mount.md)**
 
     ---
 
-    A bracket glued to the foot positions, with embedded magnets, for interchangeable bases.
+    Hangs the board on a wall or any flat vertical surface, held by magnets; the backlight
+    glows on the wall around it.
 
 -   :material-monitor: **Monitor and keyboard mounts** *(planned)*
 
     ---
 
-    Clip-on holders for the monitor bezel or next to the keyboard.
+    Clip-on holders for the monitor bezel or next to the keyboard, reusing the magnetic
+    bracket of the wall mount.
 
 </div>
 

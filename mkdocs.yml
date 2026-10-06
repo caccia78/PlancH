@@ -93,6 +93,7 @@ nav:
   - Accessories:
       - accessories/index.md
       - Desk stand: accessories/desk-stand.md
+      - Wall mount: accessories/wall-mount.md
   - Firmware: firmware/index.md
   - Home Assistant: home-assistant/index.md
   - About:
