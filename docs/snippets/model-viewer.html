@@ -19,3 +19,56 @@
     button.classList.toggle("md-button--primary", dark);
   });
 </script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer-effects@1.5.0/dist/model-viewer-effects.min.js"></script>
+<!-- LED controls: buttons with data-led="led_stato|led_scene|led_retro" and a colour input inside
+     the controls element. Material names written by tools/viewer_glb.py and mechanical/leggio.py;
+     luce_retro (the light slots) exists only in the desk stand model. -->
+<script>
+  function planchLeds(viewerId, controlsId) {
+    const viewer = document.getElementById(viewerId);
+    const controls = document.getElementById(controlsId);
+    const buttons = controls.querySelectorAll("button[data-led]");
+    const colour = controls.querySelector("input[type=color]");
+    const on = { led_stato: false, led_scene: false, led_retro: false };
+
+    // glTF colour factors are linear, the colour picker is sRGB
+    const linear = (hex) => [1, 3, 5].map((i) => {
+      const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+      return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+
+    // Emissive strength for a given brightness, whatever the colour (blue is darker than orange):
+    // above the bloom threshold, so only the LEDs glow
+    const setLight = (name, lit, rgb, brightness, alpha, offColour) => {
+      const material = viewer.model && viewer.model.getMaterialByName(name);
+      if (!material) return;
+      const luminance = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+      material.setEmissiveFactor(lit ? rgb : [0, 0, 0]);
+      material.setEmissiveStrength(lit ? brightness / Math.max(luminance, 0.02) : 1);
+      material.pbrMetallicRoughness.setBaseColorFactor(lit ? [...rgb, alpha] : offColour);
+    };
+
+    const apply = () => {
+      const rgb = linear(colour.value);
+      for (const name of Object.keys(on)) {
+        setLight(name, on[name], rgb, 8, 1, [0.85, 0.85, 0.85, 1]);
+      }
+      setLight("luce_retro", on.led_retro, rgb, 4, 0.85, [1, 1, 1, 0]);
+      for (const button of buttons) {
+        button.setAttribute("aria-pressed", String(on[button.dataset.led]));
+        button.classList.toggle("md-button--primary", on[button.dataset.led]);
+      }
+    };
+    viewer.addEventListener("load", apply);
+    for (const button of buttons) {
+      button.addEventListener("click", () => {
+        on[button.dataset.led] = !on[button.dataset.led];
+        apply();
+      });
+    }
+    colour.addEventListener("input", () => {
+      if (!Object.values(on).some(Boolean)) for (const name of Object.keys(on)) on[name] = true;
+      apply();
+    });
+  }
+</script>

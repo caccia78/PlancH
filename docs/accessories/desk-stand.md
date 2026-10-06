@@ -23,7 +23,6 @@ you can also switch on the LEDs, by group as in the firmware: the backlight shin
 is suggested by the glowing light slots.
 
 --8<-- "model-viewer.html"
-<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer-effects@1.5.0/dist/model-viewer-effects.min.js"></script>
 
 <div style="margin: 2rem 0 0.5rem; border: 1px solid var(--md-border-color); border-radius: 8px; overflow: hidden;">
   <model-viewer 
@@ -49,52 +48,18 @@ is suggested by the glowing light slots.
   <button type="button" class="md-button" data-led="led_stato" aria-pressed="false">Status</button>
   <button type="button" class="md-button" data-led="led_scene" aria-pressed="false">Scenes</button>
   <button type="button" class="md-button" data-led="led_retro" aria-pressed="false">Backlight</button>
-  <label>Colour <input type="color" id="leggio-colore" value="#ff7043"></label>
+  <label>Colour <input type="color" value="#ff7043"></label>
 </p>
 
 <script>
+  planchLeds("leggio-3d", "leggio-led-controlli");
   (() => {
     const viewer = document.getElementById("leggio-3d");
     const boardButton = document.getElementById("leggio-scheda");
-    const ledControls = document.getElementById("leggio-led-controlli");
-    const ledButtons = ledControls.querySelectorAll("button[data-led]");
-    const ledColour = document.getElementById("leggio-colore");
     const models = {
       false: "/PlancH/assets/leggio-viewer.glb",
       true: "/PlancH/assets/leggio-assieme-viewer.glb",
     };
-    // Material names written by mechanical/leggio.py; the backlight also lights the slots
-    const on = { led_stato: false, led_scene: false, led_retro: false };
-
-    // glTF colour factors are linear, the colour picker is sRGB
-    const linear = (hex) => [1, 3, 5].map((i) => {
-      const c = parseInt(hex.slice(i, i + 2), 16) / 255;
-      return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-    });
-
-    // Emissive strength for a given brightness, whatever the colour (blue is darker than orange)
-    const setLight = (name, lit, rgb, brightness, alpha, offColour) => {
-      const material = viewer.model && viewer.model.getMaterialByName(name);
-      if (!material) return;
-      const luminance = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
-      material.setEmissiveFactor(lit ? rgb : [0, 0, 0]);
-      material.setEmissiveStrength(lit ? brightness / Math.max(luminance, 0.02) : 1);
-      material.pbrMetallicRoughness.setBaseColorFactor(lit ? [...rgb, alpha] : offColour);
-    };
-
-    const applyLeds = () => {
-      const rgb = linear(ledColour.value);
-      for (const name of Object.keys(on)) {
-        setLight(name, on[name], rgb, 8, 1, [0.85, 0.85, 0.85, 1]);
-      }
-      setLight("luce_retro", on.led_retro, rgb, 4, 0.85, [1, 1, 1, 0]);
-      for (const button of ledButtons) {
-        button.setAttribute("aria-pressed", String(on[button.dataset.led]));
-        button.classList.toggle("md-button--primary", on[button.dataset.led]);
-      }
-    };
-    viewer.addEventListener("load", applyLeds);
-
     boardButton.addEventListener("click", () => {
       const show = boardButton.getAttribute("aria-pressed") !== "true";
       const orbit = viewer.getCameraOrbit();
@@ -105,17 +70,7 @@ is suggested by the glowing light slots.
       viewer.src = models[show];
       boardButton.setAttribute("aria-pressed", String(show));
       boardButton.textContent = show ? "Hide the board" : "Show the board";
-      ledControls.hidden = !show;
-    });
-    for (const button of ledButtons) {
-      button.addEventListener("click", () => {
-        on[button.dataset.led] = !on[button.dataset.led];
-        applyLeds();
-      });
-    }
-    ledColour.addEventListener("input", () => {
-      if (!Object.values(on).some(Boolean)) for (const name of Object.keys(on)) on[name] = true;
-      applyLeds();
+      document.getElementById("leggio-led-controlli").hidden = !show;
     });
   })();
 </script>
