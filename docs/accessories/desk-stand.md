@@ -16,6 +16,21 @@ onto the desk.
 </figure>
 </div>
 
+## 3D View
+
+Inspect the stand design in 3D:
+
+<div style="margin: 2rem 0; border: 1px solid var(--md-border-color); border-radius: 8px; overflow: hidden;">
+  <model-viewer 
+    id="leggio-3d"
+    src="/PlancH/assets/leggio-viewer.glb"
+    alt="PlancH desk stand 3D model"
+    auto-rotate
+    camera-controls
+    style="width: 100%; height: 500px; display: block;">
+  </model-viewer>
+</div>
+
 ## Files
 
 | File | Use |
