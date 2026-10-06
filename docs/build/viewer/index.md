@@ -2,17 +2,7 @@
 
 Explore PlancH in 3D — rotate, zoom, and pan to inspect every detail of the circuit board.
 
-<div style="margin: 2rem 0; border: 1px solid var(--md-border-color); border-radius: 8px; overflow: hidden; background: var(--md-code-bg-color);">
-  <model-viewer 
-    id="planch-3d"
-    src="../../../assets/planch-viewer.glb"
-    alt="PlancH 3D model"
-    auto-rotate
-    camera-controls
-    style="width: 100%; height: 500px; display: block;">
-  </model-viewer>
-  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
-</div>
+<iframe src="../../assets/viewer-3d.html" style="width: 100%; height: 500px; border: 1px solid var(--md-border-color); border-radius: 8px; margin: 2rem 0;"></iframe>
 
 ## About this model
 
