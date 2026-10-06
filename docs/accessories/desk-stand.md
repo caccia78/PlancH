@@ -42,6 +42,7 @@ is suggested by the glowing light slots.
 
 <p>
   <button type="button" class="md-button" id="leggio-scheda" aria-pressed="false">Show the board</button>
+  <button type="button" class="md-button" data-viewer-background="leggio-3d" aria-pressed="false">Dark background</button>
 </p>
 <p id="leggio-led-controlli" hidden>
   LEDs:

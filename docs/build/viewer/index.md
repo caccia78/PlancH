@@ -15,6 +15,8 @@ Explore the complete PlancH circuit board in 3D. Rotate, zoom, and inspect every
   </model-viewer>
 </div>
 
+<p><button type="button" class="md-button" data-viewer-background="planch-3d" aria-pressed="false">Dark background</button></p>
+
 Use your mouse to:
 
 - **Rotate** — Click and drag

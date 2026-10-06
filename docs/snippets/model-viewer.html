@@ -8,3 +8,14 @@
   }
 </script>
 <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.1.0/dist/model-viewer-module.min.js"></script>
+<!-- Buttons with data-viewer-background="<model-viewer id>" switch that viewer to a dark background -->
+<script>
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-viewer-background]");
+    if (!button) return;
+    const dark = button.getAttribute("aria-pressed") !== "true";
+    document.getElementById(button.dataset.viewerBackground).style.backgroundColor = dark ? "#101114" : "";
+    button.setAttribute("aria-pressed", String(dark));
+    button.classList.toggle("md-button--primary", dark);
+  });
+</script>
