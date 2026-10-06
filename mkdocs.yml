@@ -89,6 +89,7 @@ nav:
       - Components: build/components.md
       - Ordering the PCB: build/ordering.md
       - Assembly: build/assembly.md
+      - 3D Viewer: build/viewer/index.md
   - Accessories:
       - accessories/index.md
       - Desk stand: accessories/desk-stand.md
