@@ -18,9 +18,9 @@ onto the desk.
 
 ## 3D View
 
-Inspect the stand design in 3D:
+Inspect the stand design in 3D, on its own or with the board in place:
 
-<div style="margin: 2rem 0; border: 1px solid var(--md-border-color); border-radius: 8px; overflow: hidden;">
+<div style="margin: 2rem 0 0.5rem; border: 1px solid var(--md-border-color); border-radius: 8px; overflow: hidden;">
   <model-viewer 
     id="leggio-3d"
     src="/PlancH/assets/leggio-viewer.glb"
@@ -30,6 +30,30 @@ Inspect the stand design in 3D:
     style="width: 100%; height: 500px; display: block;">
   </model-viewer>
 </div>
+
+<p><button type="button" class="md-button" id="leggio-scheda" aria-pressed="false">Show the board</button></p>
+
+<script>
+  (() => {
+    const viewer = document.getElementById("leggio-3d");
+    const button = document.getElementById("leggio-scheda");
+    const models = {
+      false: "/PlancH/assets/leggio-viewer.glb",
+      true: "/PlancH/assets/leggio-assieme-viewer.glb",
+    };
+    button.addEventListener("click", () => {
+      const show = button.getAttribute("aria-pressed") !== "true";
+      const orbit = viewer.getCameraOrbit();
+      viewer.addEventListener("load", () => {
+        viewer.cameraOrbit = `${orbit.theta}rad ${orbit.phi}rad ${orbit.radius}m`;
+        viewer.jumpCameraToGoal();
+      }, { once: true });
+      viewer.src = models[show];
+      button.setAttribute("aria-pressed", String(show));
+      button.textContent = show ? "Hide the board" : "Show the board";
+    });
+  })();
+</script>
 
 ## Files
 

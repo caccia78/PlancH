@@ -9,8 +9,11 @@ cambiata di segno), Z verso il fronte della scheda. Nel sistema della cornice Z 
 la faccia superiore del fondo, dove poggiano i piedini.
 
 Uso (dalla radice del repository):
-    uv run --no-project --python 3.12 --with build123d --with pyvista \
+    uv run --no-project --python 3.12 --with build123d --with pyvista --with trimesh \
         python mechanical/leggio.py [--pcb 1.6] [--piedini 5] [--render]
+
+Per il viewer 3D del sito scrive anche leggio.glb e leggio-assieme.glb; la scheda
+dell'assieme è output/planch-viewer.glb (kicad-cli, con serigrafia e maschera).
 """
 
 import argparse
@@ -24,6 +27,7 @@ from build123d import (
 
 RADICE = Path(__file__).resolve().parent.parent
 STEP_SCHEDA = RADICE / "output" / "planch.step"
+GLB_SCHEDA = RADICE / "output" / "planch-viewer.glb"
 USCITA = RADICE / "output"
 
 # Parametri (SPEC.md, "Leggio da scrivania")
@@ -148,6 +152,63 @@ def esporta(leggio, scheda, piedi):
     export_step(Compound(children=[leggio, scheda, *piedi]), str(USCITA / "leggio-assieme.step"))
 
 
+def esporta_glb(leggio, piedi, sposta):
+    """GLB per il viewer 3D del sito: leggio da solo e assieme con la scheda. glTF vuole metri
+    e Y in alto: (x, y, z) dello STEP -> (x, z, -y) / 1000, come fa kicad-cli."""
+    import numpy as np
+    import trimesh
+    from trimesh.visual.material import PBRMaterial
+
+    gltf = np.diag([0.001, 0.001, 0.001, 1.0]) @ np.array(
+        [[1, 0, 0, 0], [0, 0, 1, 0], [0, -1, 0, 0], [0, 0, 0, 1]], dtype=float)
+
+    def mesh(forma, nome, colore, alpha="OPAQUE"):
+        v, t = forma.tessellate(0.05, 0.2)
+        m = trimesh.Trimesh(np.array([(q.X, q.Y, q.Z) for q in v]), np.array(t), process=False)
+        m.apply_transform(gltf)
+        m.vertex_normals   # calcolate qui, così l'export le include
+        m.visual = trimesh.visual.TextureVisuals(material=PBRMaterial(
+            name=nome, baseColorFactor=colore, metallicFactor=0.0, roughnessFactor=0.7,
+            alphaMode=alpha))
+        return m
+
+    corpo = mesh(leggio, "leggio", [0.91, 0.90, 0.88, 1.0])
+    trimesh.Scene({"leggio": corpo}).export(str(USCITA / "leggio.glb"), include_normals=True)
+
+    # La scheda di kicad-cli è già nel sistema glTF: si porta sui piedini con lo stesso
+    # spostamento dello STEP, espresso in quel sistema. Le parti si uniscono per materiale:
+    # trimesh separa ogni primitiva (oltre 5000 mesh, troppe chiamate di disegno sui telefoni)
+    t = sposta.wrapped.Transformation()
+    m = np.vstack([[[t.Value(i, j) for j in range(1, 5)] for i in range(1, 4)], [0, 0, 0, 1]])
+    porta = gltf @ m @ np.linalg.inv(gltf)
+    scheda = trimesh.load(str(GLB_SCHEDA), force="scene")
+    grigio = PBRMaterial(name="senza_materiale", baseColorFactor=[0.4, 0.4, 0.4, 1.0])
+    gruppi = {}
+    for nodo in scheda.graph.nodes_geometry:
+        tr, nome = scheda.graph[nodo]
+        parte = scheda.geometry[nome]
+        materiale = getattr(parte.visual, "material", grigio)   # alcune primitive non ne hanno
+        gruppi.setdefault(materiale.name, (materiale, []))[1].append((parte, porta @ tr))
+    assieme = trimesh.Scene()
+    for nome, (materiale, parti) in gruppi.items():
+        v, vn, f, n = [], [], [], 0
+        for parte, tr in parti:
+            v.append(trimesh.transform_points(parte.vertices, tr))
+            vn.append(parte.vertex_normals @ tr[:3, :3].T)
+            f.append(parte.faces + n)
+            n += len(parte.vertices)
+        vn = np.vstack(vn)
+        unita = trimesh.Trimesh(np.vstack(v), np.vstack(f), process=False,
+                                vertex_normals=vn / np.linalg.norm(vn, axis=1, keepdims=True))
+        unita.visual = trimesh.visual.TextureVisuals(material=materiale)
+        assieme.add_geometry(unita, node_name=f"planch_{nome}", geom_name=f"planch_{nome}")
+    assieme.add_geometry(corpo, node_name="leggio", geom_name="leggio")
+    for i, f in enumerate(piedi, 1):
+        assieme.add_geometry(mesh(f, "piedino", [0.85, 0.92, 0.97, 0.6], "BLEND"),
+                             node_name=f"piedino_{i}", geom_name=f"piedino_{i}")
+    assieme.export(str(USCITA / "leggio-assieme.glb"), include_normals=True)
+
+
 def render(parti, nome, direzione):
     """Render di controllo con PyVista (VTK), fuori schermo; direzione = da dove si guarda."""
     import numpy as np
@@ -200,11 +261,12 @@ if __name__ == "__main__":
     args = a.parse_args()
     STEP_SCHEDA, USCITA = args.scheda.resolve(), args.uscita.resolve()
 
-    leggio, scheda, piedi, _ = costruisci(args.pcb, args.piedini, args.inclinazione)
+    leggio, scheda, piedi, sposta = costruisci(args.pcb, args.piedini, args.inclinazione)
     bb = leggio.bounding_box()
     print(f"Leggio: {bb.size.X:.1f} x {bb.size.Y:.1f} x {bb.size.Z:.1f} mm, "
           f"volume {leggio.volume / 1000:.1f} cm³, solidi {len(leggio.solids())}")
     esporta(leggio, scheda, piedi)
+    esporta_glb(leggio, piedi, sposta)
     if args.render:
         render([(leggio, "#e8e6e1")], "leggio-render.png", (0.45, -0.75, 0.75))
         render(parti_colorate(leggio, scheda, piedi), "leggio-assieme-fronte.png", (0.35, -0.8, 0.5))
