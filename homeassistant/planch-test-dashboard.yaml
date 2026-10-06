@@ -1,0 +1,177 @@
+# PlancH - test bench dashboard for the firmware planch-test.yaml (ESP-WROOM-32 without hardware).
+# Settings > Dashboards > Add dashboard > New dashboard from scratch, open it,
+# menu (three dots) > Edit dashboard > menu > Raw configuration editor, paste this file and save.
+# The entity IDs assume the device name "planch-test" (friendly name "PlancH test").
+#
+# LEDs: true hue at full brightness (the real levels are low on purpose and would look black);
+# small dot = dim, large dot = full brightness, empty circle = off.
+
+title: PlancH test bench
+views:
+  - title: PlancH
+    path: planch
+    icon: mdi:gesture-tap-button
+    cards:
+      - type: vertical-stack
+        cards:
+          # D1-D3 on the ear, then the OLED
+          - type: markdown
+            content: |-
+              {%- macro led(h) -%}
+                {%- if h is not string or h | length != 7 or h == '#000000' -%}<font color="#555555">○</font>
+                {%- else -%}
+                  {%- set r, g, b = h[1:3] | int(base=16), h[3:5] | int(base=16), h[5:7] | int(base=16) %}
+                  {%- set m = [r, g, b] | max -%}
+                  <font color="#{{ '%02x%02x%02x' | format((r * 255 / m) | int, (g * 255 / m) | int, (b * 255 / m) | int) }}">{{ '●' if m >= 128 else '•' }}</font>
+                {%- endif -%}
+              {%- endmacro %}
+              {%- set c = (states('sensor.planch_test_leds') ~ ' ' * 100).split(' ') %}
+              **Status** {{ led(c[0]) }} {{ led(c[1]) }} {{ led(c[2]) }}
+              &nbsp;&nbsp; **Backlight** {{ led(c[7]) }} {{ led(c[8]) }} {{ led(c[9]) }} {{ led(c[10]) }} {{ led(c[11]) }} {{ led(c[12]) }}
+
+              ```
+              {{ states('sensor.planch_test_screen') }}
+              ```
+          - type: horizontal-stack
+            cards:
+              # Scene keys with their LED (D4-D7)
+              - type: vertical-stack
+                cards:
+                  - &scena
+                    type: button
+                    entity: button.planch_test_scene_1
+                    name: S1
+                    icon: mdi:weather-sunny
+                    show_state: false
+                    tap_action:
+                      action: perform-action
+                      perform_action: button.press
+                      target:
+                        entity_id: button.planch_test_scene_1
+                  - <<: *scena
+                    entity: button.planch_test_scene_2
+                    name: S2
+                    icon: mdi:weather-night
+                    tap_action:
+                      action: perform-action
+                      perform_action: button.press
+                      target:
+                        entity_id: button.planch_test_scene_2
+                  - <<: *scena
+                    entity: button.planch_test_scene_3
+                    name: S3
+                    icon: mdi:power
+                    tap_action:
+                      action: perform-action
+                      perform_action: button.press
+                      target:
+                        entity_id: button.planch_test_scene_3
+                  - <<: *scena
+                    entity: button.planch_test_scene_4
+                    name: S4
+                    icon: mdi:exit-run
+                    tap_action:
+                      action: perform-action
+                      perform_action: button.press
+                      target:
+                        entity_id: button.planch_test_scene_4
+                  - type: markdown
+                    content: |-
+                      {%- macro led(h) -%}
+                      {%- if h is not string or h | length != 7 or h == '#000000' -%}<font color="#555555">○</font>
+                      {%- else -%}
+                        {%- set r, g, b = h[1:3] | int(base=16), h[3:5] | int(base=16), h[5:7] | int(base=16) %}
+                        {%- set m = [r, g, b] | max -%}
+                        <font color="#{{ '%02x%02x%02x' | format((r * 255 / m) | int, (g * 255 / m) | int, (b * 255 / m) | int) }}">{{ '●' if m >= 128 else '•' }}</font>
+                      {%- endif -%}
+                      {%- endmacro %}
+                      {%- set c = (states('sensor.planch_test_leds') ~ ' ' * 100).split(' ') %}
+                      {%- for i in range(3, 7) %}
+                      S{{ i - 2 }} {{ led(c[i]) }}<br>
+                      {%- endfor %}
+              # Cross, OK and Back as on the board
+              - type: grid
+                columns: 3
+                square: true
+                cards:
+                  - type: markdown
+                    content: " "
+                  - &tasto
+                    type: button
+                    entity: button.planch_test_up
+                    name: Up
+                    icon: mdi:chevron-up
+                    show_state: false
+                    tap_action:
+                      action: perform-action
+                      perform_action: button.press
+                      target:
+                        entity_id: button.planch_test_up
+                  - type: button
+                    entity: button.planch_test_touch
+                    name: Touch
+                    icon: mdi:gesture-tap
+                    show_state: false
+                    tap_action:
+                      action: perform-action
+                      perform_action: button.press
+                      target:
+                        entity_id: button.planch_test_touch
+                  - <<: *tasto
+                    entity: button.planch_test_left
+                    name: Left
+                    icon: mdi:chevron-left
+                    tap_action:
+                      action: perform-action
+                      perform_action: button.press
+                      target:
+                        entity_id: button.planch_test_left
+                  - <<: *tasto
+                    entity: button.planch_test_ok
+                    name: OK
+                    icon: mdi:circle-outline
+                    tap_action:
+                      action: perform-action
+                      perform_action: button.press
+                      target:
+                        entity_id: button.planch_test_ok
+                  - <<: *tasto
+                    entity: button.planch_test_right
+                    name: Right
+                    icon: mdi:chevron-right
+                    tap_action:
+                      action: perform-action
+                      perform_action: button.press
+                      target:
+                        entity_id: button.planch_test_right
+                  - type: markdown
+                    content: " "
+                  - <<: *tasto
+                    entity: button.planch_test_down
+                    name: Down
+                    icon: mdi:chevron-down
+                    tap_action:
+                      action: perform-action
+                      perform_action: button.press
+                      target:
+                        entity_id: button.planch_test_down
+                  - <<: *tasto
+                    entity: button.planch_test_back
+                    name: Back
+                    icon: mdi:arrow-left
+                    tap_action:
+                      action: perform-action
+                      perform_action: button.press
+                      target:
+                        entity_id: button.planch_test_back
+          # Data from Home Assistant and the lights driven by HA: status D2, D3 and backlight D8-D13
+          - type: entities
+            entities:
+              - entity: sensor.planch_menu
+                name: Labelled devices
+              - entity: light.planch_test_status_led_2
+                name: Status LED 2
+              - entity: light.planch_test_status_led_3
+                name: Status LED 3
+              - entity: light.planch_test_backlight
+                name: Backlight

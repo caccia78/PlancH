@@ -1,10 +1,15 @@
 # Firmware
 
-PlancH runs [ESPHome](https://esphome.io). The current configuration,
-[`firmware/planch.yaml`](https://github.com/caccia78/PlancH/blob/main/firmware/planch.yaml), is a
-**bring-up firmware**: it exposes every button, the touch area, the display and the three LED
-groups to Home Assistant, so you can test the board and build your own automations. Menus on
-the display and ready-made scenes will come in later versions.
+PlancH runs [ESPHome](https://esphome.io). The devices to control are not written in the
+firmware: you choose them in Home Assistant with a label, and PlancH builds its menu by itself,
+by room and by type. See [Home Assistant](../home-assistant/index.md) for the setup.
+
+| File | Use |
+| --- | --- |
+| [`firmware/planch.yaml`](https://github.com/caccia78/PlancH/blob/main/firmware/planch.yaml) | **The firmware**: menu on the display, keys, LEDs |
+| [`firmware/planch/`](https://github.com/caccia78/PlancH/tree/main/firmware/planch) | Shared logic (`core.yaml`, `menu.h`): keep it next to `planch.yaml` |
+| [`firmware/planch-bringup.yaml`](https://github.com/caccia78/PlancH/blob/main/firmware/planch-bringup.yaml) | Assembly test: buttons and LED groups on a web page, see the [assembly guide](../build/assembly.md) |
+| [`firmware/planch-test.yaml`](https://github.com/caccia78/PlancH/blob/main/firmware/planch-test.yaml) | Test bench on any ESP32 board, without the PlancH hardware |
 
 !!! info "Coming soon: install from the browser"
     A one-click installer (ESP Web Tools) is planned: plug the board into your computer, open
@@ -16,11 +21,11 @@ You need [ESPHome](https://esphome.io/guides/installing_esphome) on your compute
 (`pip install esphome`, or `uvx esphome` with [uv](https://docs.astral.sh/uv/)), or the ESPHome
 Device Builder add-on in Home Assistant.
 
-1. Download the repository (or just the `firmware/` folder).
-2. Copy `firmware/secrets.yaml.example` to `firmware/secrets.yaml` and fill in your Wi-Fi name
-   and password. This file stays on your computer.
-3. Connect the board with a USB-C **data** cable.
-4. Run:
+1. Download the repository, or just the `firmware/` folder. With the Device Builder, copy
+   `planch.yaml` and the `planch/` folder into the `esphome` folder of Home Assistant (next to
+   `configuration.yaml`).
+2. Connect the board with a USB-C **data** cable.
+3. Run:
 
     ```bash
     esphome run firmware/planch.yaml
@@ -29,22 +34,51 @@ Device Builder add-on in Home Assistant.
     The first time, choose the USB serial port. If the board is not detected, hold the **BOOT**
     button on the ESP32-S3-Zero while plugging in the cable.
 
-5. After the first flash, later updates can go over Wi-Fi (OTA): run the same command and pick
-   the network address.
+4. **Wi-Fi.** The firmware has no Wi-Fi password in it: set it after flashing.
+    - Open [web.esphome.io](https://web.esphome.io) in Chrome or Edge, press **Connect**, pick
+      the board and choose **Configure Wi-Fi**; or
+    - join the **PlancH** Wi-Fi network that the board opens while it has no network, and pick
+      your network on the page that appears (or open `192.168.4.1`).
+5. Later updates go over Wi-Fi (OTA): run the same command and pick the network address.
+
+Then add the board to Home Assistant and enable its actions, as described in
+[Home Assistant](../home-assistant/index.md).
+
+## Keys and display
+
+The display shows rooms → types in the room (skipped if there is only one) → devices →
+the controls of one device.
+
+| Key | In the lists | On a device |
+| --- | --- | --- |
+| Up, Down | Move | Light, thermostat: previous / next device. Cover: open / close |
+| OK, Right | Enter | Light, thermostat: on / off. Cover: stop. Right on a light: brighter; on a thermostat: +0.5 °C |
+| Back, Left | Go back | Back: go back. Left on a light: dimmer; on a thermostat: −0.5 °C |
+| Scene 1–4 | Run the scene, script or automation assigned in Home Assistant | Same |
+| Touch | Wake the display | Wake the display |
+
+The display switches off after 30 seconds without keys; the first key only wakes it up. The
+scene keys work with the display off too.
+
+## LEDs
+
+| LED | Meaning |
+| --- | --- |
+| D1 (ear, left) | Off when everything is fine. Red: no connection to Home Assistant. Amber: menu missing, empty or over the limits. Short red flash: a command failed |
+| D2, D3 (ear) | Free: two RGB lights in Home Assistant, **Status LED 2** and **Status LED 3**, for your automations |
+| D4–D7 (scene keys) | On with the display, and for 5 seconds after a scene key. Full on the **active scene**, dim on the other assigned keys. After a press: green if Home Assistant confirms, red on error |
+| D8–D13 (backlight) | The RGB light **Backlight** in Home Assistant |
+
+LED brightness is limited to 40% in the firmware to keep the USB current low.
 
 ## What the firmware exposes
 
 | Entity | Type | Notes |
 | --- | --- | --- |
-| Up, Down, Left, Right, OK, Back | Binary sensor | `on` while pressed |
-| Scene 1 – Scene 4 | Binary sensor | `on` while pressed |
+| Up, Down, Left, Right, OK, Back, Scene 1 – Scene 4 | Binary sensor | `on` while pressed: you can use them in automations too |
 | Touch | Binary sensor | Capacitive area on the ear, calibrate the threshold |
-| Status LEDs | Light (RGB) | D1–D3 on the ear |
-| Scene LEDs | Light (RGB) | D4–D7, next to the scene buttons |
-| Backlight | Light (RGB) | D8–D13, towards the desk |
-
-The display shows "PlancH". LED brightness is limited to 40% in the firmware to keep the USB
-current low.
+| Status LED 2, Status LED 3 | Light (RGB) | D2 and D3 on the ear |
+| Backlight | Light (RGB) | D8–D13, towards the desk (or the wall) |
 
 ## Calibrating the touch area
 
@@ -54,6 +88,16 @@ default in `planch.yaml`) the ESPHome log prints the raw touch value:
 1. Read the value at rest and with a finger on the ear.
 2. Set `threshold` about halfway between the two.
 3. Set `setup_mode: false` and flash again.
+
+## Test bench without the hardware
+
+[`firmware/planch-test.yaml`](https://github.com/caccia78/PlancH/blob/main/firmware/planch-test.yaml)
+runs the same menu on any ESP32 board (it was developed on an ESP-WROOM-32) with nothing
+connected. The keys are buttons in Home Assistant; what the display and the LEDs would show is
+published as two text sensors, **Screen** and **LEDs**. The dashboard
+[`homeassistant/planch-test-dashboard.yaml`](https://github.com/caccia78/PlancH/blob/main/homeassistant/planch-test-dashboard.yaml)
+draws the panel: display, LEDs as coloured dots and keys laid out as on the board. Useful to try
+the menu with your devices before building the board.
 
 ## Pinout
 

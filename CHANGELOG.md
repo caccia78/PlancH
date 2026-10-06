@@ -14,7 +14,16 @@ the back of the board.
 ### Accessories
 
 - Desk stand: 3D-printed frame that holds the board at 20°, with light slots for the backlight.
+- Wall mount: ring bracket glued behind the board and a base stuck to the wall, held by magnets;
+  the backlight shines on the wall around it.
 
 ### Firmware
 
-- Reference ESPHome configuration for hardware bring-up: buttons, touch, display, LED groups.
+- Menu built automatically from Home Assistant: devices chosen with the label "PlancH", grouped
+  by room and type (lights, covers, thermostats); scene keys assigned with the labels
+  "PlancH S1"–"PlancH S4". Home Assistant package in `homeassistant/planch.yaml`.
+- LEDs: D1 shows problems, D2–D3 and the backlight are lights for Home Assistant automations,
+  the scene LEDs show the active scene and confirm each press.
+- Wi-Fi set after flashing (web.esphome.io or the board's hotspot): no password in the files.
+- Assembly test firmware `planch-bringup.yaml` (buttons, touch, display, LED groups) and a test
+  bench `planch-test.yaml` that runs the menu on any ESP32 board.

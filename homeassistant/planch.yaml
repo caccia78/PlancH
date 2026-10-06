@@ -1,0 +1,96 @@
+# PlancH - Home Assistant package: builds the menu of the button panel.
+#
+# Install: copy this file to /config/packages/planch.yaml and make sure configuration.yaml has
+#   homeassistant:
+#     packages: !include_dir_named packages
+# then restart Home Assistant (or reload template entities).
+#
+# Use:
+# - Put the label "PlancH" on the lights, covers and thermostats (climate) to control, or on
+#   their device. PlancH groups them by area (room) and by type; no area -> "Other".
+# - Put the labels "PlancH S1" ... "PlancH S4" on the scene, script or automation for each scene
+#   key (one entity per label).
+# - In the ESPHome integration options of the panel enable
+#   "Allow the device to perform Home Assistant actions".
+#
+# Limits (memory of the ESP32 and size of the OLED): 8 rooms, 8 devices per room, 32 devices in
+# total, names shown up to 16 characters. Beyond the limits the list is cut and the panel shows
+# "limit!". Areas and labels are read again at the next state change of a listed device.
+#
+# The attributes start with "planch1:" (format version): it keeps them plain strings in Home
+# Assistant, the panel reads the JSON after it.
+
+template:
+  - sensor:
+      - name: "PlancH menu"
+        unique_id: planch_menu
+        icon: mdi:gesture-tap-button
+        # Number of labelled devices (also beyond the limits)
+        state: >-
+          {%- set ns = namespace(ids=label_entities('PlancH')) %}
+          {%- for d in label_devices('PlancH') %}{% set ns.ids = ns.ids + device_entities(d) %}{% endfor %}
+          {{ ns.ids | unique | select('match', '(light|cover|climate)\.') | list | count }}
+        attributes:
+          # {"r": [{"n": room, "d": [{"e": entity, "n": name, "t": l|c|h, "s": state,
+          #   "v": brightness % | position % | target temperature, "c": current temperature}]}],
+          #  "w": 1 if the limits cut the list}
+          menu: >-
+            {%- set max_rooms, max_per_room, max_total = 8, 8, 32 %}
+            {%- set ns = namespace(ids=label_entities('PlancH')) %}
+            {%- for d in label_devices('PlancH') %}{% set ns.ids = ns.ids + device_entities(d) %}{% endfor %}
+            {%- set ids = ns.ids | unique | select('match', '(light|cover|climate)\.') | list %}
+            {%- set ns = namespace(areas=[], rooms=[], total=0, cut=false) %}
+            {%- for e in ids %}{% set ns.areas = ns.areas + [area_name(e) or 'Other'] %}{% endfor %}
+            {%- set areas = ns.areas | unique | sort | list %}
+            {%- if areas | count > max_rooms %}{% set ns.cut = true %}{% endif %}
+            {%- for a in areas[:max_rooms] %}
+              {%- set nd = namespace(devs=[]) %}
+              {%- for e in ids if (area_name(e) or 'Other') == a %}
+                {%- set name = state_attr(e, 'friendly_name') or e %}
+                {%- if name | lower != a | lower and (name | lower).startswith(a | lower ~ ' ') %}
+                  {%- set name = name[a | length:] | trim %}
+                {%- endif %}
+                {%- set kind = e.split('.')[0] %}
+                {%- set s = states(e) %}
+                {%- if kind == 'light' %}
+                  {%- set b = state_attr(e, 'brightness') %}
+                  {%- set item = {'e': e, 'n': name[:16], 't': 'l', 's': s, 'v': (b / 2.55) | round(0) | int if b is number else none} %}
+                {%- elif kind == 'cover' %}
+                  {%- set pos = state_attr(e, 'current_position') %}
+                  {%- set item = {'e': e, 'n': name[:16], 't': 'c', 's': s, 'v': pos if pos is number else none} %}
+                {%- else %}
+                  {%- set item = {'e': e, 'n': name[:16], 't': 'h', 's': s, 'v': state_attr(e, 'temperature'), 'c': state_attr(e, 'current_temperature')} %}
+                {%- endif %}
+                {%- set nd.devs = nd.devs + [item] %}
+              {%- endfor %}
+              {%- set devs = nd.devs | sort(attribute='n') | list %}
+              {%- set room_left = [max_per_room, max_total - ns.total] | min %}
+              {%- if devs | count > room_left %}{% set ns.cut = true %}{% set devs = devs[:[room_left, 0] | max] %}{% endif %}
+              {%- if devs | count > 0 %}
+                {%- set ns.rooms = ns.rooms + [{'n': a[:16], 'd': devs}] %}
+                {%- set ns.total = ns.total + devs | count %}
+              {%- endif %}
+            {%- endfor %}
+            {{ 'planch1:' ~ ({'r': ns.rooms, 'w': 1 if ns.cut else 0} | to_json) }}
+          # {"1": {"e": entity, "n": name, "a": 1 if active}, ... "4": ...} from the labels
+          # "PlancH S1" ... "PlancH S4". Active: the most recently activated of the four (scene and
+          # button: state; script and automation: last_triggered), and a script while it runs.
+          scene: >-
+            {%- set ns = namespace(items=[], best=0, best_t='') %}
+            {%- for k in range(1, 5) %}
+              {%- set e = label_entities('PlancH S' ~ k) | first %}
+              {%- if e %}
+                {%- set kind = e.split('.')[0] %}
+                {%- set t = (states(e) if kind in ['scene', 'button', 'input_button'] else state_attr(e, 'last_triggered')) | string %}
+                {%- set t = as_datetime(t) if t is match('\\d{4}-\\d{2}-\\d{2}') else none %}
+                {%- if t and (ns.best_t == '' or t > ns.best_t) %}{% set ns.best = k %}{% set ns.best_t = t %}{% endif %}
+              {%- endif %}
+            {%- endfor %}
+            {%- for k in range(1, 5) %}
+              {%- set e = label_entities('PlancH S' ~ k) | first %}
+              {%- if e %}
+                {%- set active = k == ns.best or (e.startswith('script.') and is_state(e, 'on')) %}
+                {%- set ns.items = ns.items + [(k | string, {'e': e, 'n': (state_attr(e, 'friendly_name') or e)[:16], 'a': 1 if active else 0})] %}
+              {%- endif %}
+            {%- endfor %}
+            {{ 'planch1:' ~ (dict(ns.items) | to_json) }}

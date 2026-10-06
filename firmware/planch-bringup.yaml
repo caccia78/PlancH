@@ -1,0 +1,131 @@
+# PlancH - assembly test firmware (bring-up). Every button, the touch area and the three LED groups
+# are exposed to Home Assistant and on a web page at the module's IP address, to check each part
+# while soldering. When the board is complete, flash planch.yaml (menu from Home Assistant).
+# Wi-Fi is set after flashing: from web.esphome.io ("Configure Wi-Fi", Improv serial) or from the
+# "PlancH" hotspot that the board opens while it has no network.
+
+esphome:
+  name: planch
+  friendly_name: PlancH
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+logger:
+  hardware_uart: USB_SERIAL_JTAG   # frees TX/RX (Back button on GPIO 44)
+
+api:
+ota:
+  - platform: esphome
+wifi:
+  ap:
+    ssid: "PlancH"
+captive_portal:
+improv_serial:
+
+# Web page with LED groups and button states, for the tests during assembly
+web_server:
+  port: 80
+
+i2c:
+  sda: GPIO11
+  scl: GPIO12
+  frequency: 400kHz
+
+font:
+  - file: "gfonts://Roboto"
+    id: font_small
+    size: 10
+
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306 128x64"
+    address: 0x3C
+    id: oled
+    lambda: |-
+      it.print(0, 0, id(font_small), "PlancH");
+
+esp32_touch:
+  setup_mode: true   # logs raw values to calibrate the threshold
+
+binary_sensor:
+  - platform: esp32_touch
+    name: "Touch"
+    pin: GPIO13
+    threshold: 1000   # provisional value, calibrate after assembly
+
+  # Buttons to GND with internal pull-up; debounce in firmware
+  - platform: gpio
+    name: "Up"
+    pin: { number: GPIO1, inverted: true, mode: { input: true, pullup: true } }
+    filters: [delayed_on: 10ms]
+  - platform: gpio
+    name: "Down"
+    pin: { number: GPIO2, inverted: true, mode: { input: true, pullup: true } }
+    filters: [delayed_on: 10ms]
+  - platform: gpio
+    name: "Left"
+    pin:
+      number: GPIO3        # strapping pin: used as input only
+      inverted: true
+      mode: { input: true, pullup: true }
+      ignore_strapping_warning: true
+    filters: [delayed_on: 10ms]
+  - platform: gpio
+    name: "Right"
+    pin: { number: GPIO4, inverted: true, mode: { input: true, pullup: true } }
+    filters: [delayed_on: 10ms]
+  - platform: gpio
+    name: "OK"
+    pin: { number: GPIO5, inverted: true, mode: { input: true, pullup: true } }
+    filters: [delayed_on: 10ms]
+  - platform: gpio
+    name: "Scene 4"
+    pin: { number: GPIO6, inverted: true, mode: { input: true, pullup: true } }
+    filters: [delayed_on: 10ms]
+  - platform: gpio
+    name: "Scene 3"
+    pin: { number: GPIO7, inverted: true, mode: { input: true, pullup: true } }
+    filters: [delayed_on: 10ms]
+  - platform: gpio
+    name: "Scene 2"
+    pin: { number: GPIO8, inverted: true, mode: { input: true, pullup: true } }
+    filters: [delayed_on: 10ms]
+  - platform: gpio
+    name: "Scene 1"
+    pin: { number: GPIO9, inverted: true, mode: { input: true, pullup: true } }
+    filters: [delayed_on: 10ms]
+  - platform: gpio
+    name: "Back"
+    pin: { number: GPIO44, inverted: true, mode: { input: true, pullup: true } }
+    filters: [delayed_on: 10ms]
+
+light:
+  - platform: esp32_rmt_led_strip
+    id: led_chain
+    pin: GPIO10
+    num_leds: 13
+    chipset: SK6812
+    channel_colors: GRB
+    internal: true
+    color_correct: [40%, 40%, 40%]   # limits total current
+  - platform: partition
+    name: "Status LEDs"        # D1-D3, on the ear
+    segments:
+      - id: led_chain
+        from: 0
+        to: 2
+  - platform: partition
+    name: "Scene LEDs"         # D4-D7
+    segments:
+      - id: led_chain
+        from: 3
+        to: 6
+  - platform: partition
+    name: "Backlight"          # D8-D13
+    segments:
+      - id: led_chain
+        from: 7
+        to: 12

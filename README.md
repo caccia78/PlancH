@@ -42,10 +42,11 @@ https://github.com/user-attachments/assets/00802e42-387a-4095-9ca5-fa8b80f6d39a
 3. **Solder.** Open [`production/planch-ibom.html`](production/planch-ibom.html) in a browser:
    the interactive BOM highlights every part on the board. Suggested order: passives and LEDs
    on the back, buttons, ESP32 module, OLED last.
-4. **Flash the firmware.** Copy `firmware/secrets.yaml.example` to `firmware/secrets.yaml`,
-   fill in your Wi-Fi credentials and run `esphome run firmware/planch.yaml`.
-5. **Print the desk stand** (optional): `mechanical/desk-stand/` has ready-to-print 3MF and
-   STL files, see its [README](mechanical/desk-stand/README.md).
+4. **Flash the firmware.** Run `esphome run firmware/planch.yaml` and set the Wi-Fi after
+   flashing. Then install the Home Assistant package `homeassistant/planch.yaml` and put the
+   label **PlancH** on the devices to control: the panel finds them by itself, by room.
+5. **Print a stand** (optional): the [desk stand](mechanical/desk-stand/README.md) or the
+   magnetic [wall mount](mechanical/wall-mount/README.md), with ready-to-print 3MF and STL files.
 
 The [project website](https://caccia78.github.io/PlancH/) has the full documentation:
 [components with shop links](https://caccia78.github.io/PlancH/build/components/),
@@ -60,7 +61,8 @@ The [project website](https://caccia78.github.io/PlancH/) has the full documenta
 hardware/      KiCad 10 project: schematic, PCB, custom symbols, footprints and 3D models
 production/    Gerber and drill files, BOM, pick-and-place, interactive BOM, schematic PDF, STEP
 mechanical/    3D-printable accessories (build123d sources, STL, 3MF, STEP)
-firmware/      ESPHome configuration
+firmware/      ESPHome: planch.yaml (board), planch-bringup.yaml (assembly test), planch-test.yaml (test bench)
+homeassistant/ Home Assistant package (menu from labels and areas) and test bench dashboard
 media/         renders and video
 ```
 

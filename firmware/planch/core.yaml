@@ -1,0 +1,203 @@
+# PlancH - firmware core (package planch/core.yaml), shared by the real board (planch.yaml) and the test bench (planch-test.yaml).
+# The board files define the keys (they call the script planch_key) and the screen; this package
+# reads the menu from Home Assistant, performs the actions and drives the 13 LEDs.
+#
+# Home Assistant side: package homeassistant/planch.yaml (sensor.planch_menu). In the ESPHome
+# integration options enable "Allow the device to perform Home Assistant actions".
+#
+# Substitutions required: led_pin (data line of the LED chain).
+
+esphome:
+  includes:
+    - planch/menu.h
+  on_boot:
+    priority: -100
+    then:
+      - light.turn_on:
+          id: led_chain
+          brightness: 100%
+          effect: PlancH
+
+json:
+
+api:
+  on_client_connected:
+    - lambda: planch::menu().set_connected(true);
+  on_client_disconnected:
+    - lambda: planch::menu().set_connected(false);
+
+text_sensor:
+  # Menu built by Home Assistant: rooms, types, devices with their state (JSON)
+  - platform: homeassistant
+    id: ha_menu
+    entity_id: sensor.planch_menu
+    attribute: menu
+    internal: true
+    on_value:
+      - lambda: planch::menu().set_menu(x);
+  # Entities assigned to the scene keys with the labels "PlancH S1" ... "PlancH S4"
+  - platform: homeassistant
+    id: ha_scenes
+    entity_id: sensor.planch_menu
+    attribute: scene
+    internal: true
+    on_value:
+      - lambda: planch::menu().set_scenes(x);
+
+script:
+  # Key pressed: code = planch::Key (UP, DOWN, LEFT, RIGHT, OK, BACK, S1..S4, TOUCH)
+  - id: planch_key
+    mode: queued
+    max_runs: 10
+    parameters:
+      code: int
+    then:
+      - lambda: |-
+          for (auto &c : planch::menu().key(static_cast<planch::Key>(code), millis())) {
+            ESP_LOGI("planch", "%s %s %s %s", c.action.c_str(), c.entity.c_str(), c.field.c_str(), c.value.c_str());
+            id(planch_call)->execute(c.action, c.entity, c.field, c.value, c.scene);
+          }
+
+  # Home Assistant action; the data keys cannot be computed, so one branch per extra field.
+  # The outcome goes back to the model: scene LED green or red, D1 red for menu actions.
+  - id: planch_call
+    mode: queued
+    max_runs: 10
+    parameters:
+      action_name: string
+      entity: string
+      field: string
+      value: string
+      scene: int
+    then:
+      - if:
+          condition:
+            lambda: return field == "brightness_step_pct";
+          then:
+            - homeassistant.action:
+                action: !lambda return action_name;
+                data:
+                  entity_id: !lambda return entity;
+                  brightness_step_pct: !lambda return value;
+                on_success:
+                  - lambda: planch::menu().result(scene, true, millis());
+                on_error:
+                  - lambda: |-
+                      ESP_LOGW("planch", "%s %s: %s", action_name.c_str(), entity.c_str(), error.c_str());
+                      planch::menu().result(scene, false, millis());
+          else:
+            - if:
+                condition:
+                  lambda: return field == "temperature";
+                then:
+                  - homeassistant.action:
+                      action: !lambda return action_name;
+                      data:
+                        entity_id: !lambda return entity;
+                        temperature: !lambda return value;
+                      on_success:
+                        - lambda: planch::menu().result(scene, true, millis());
+                      on_error:
+                        - lambda: |-
+                            ESP_LOGW("planch", "%s %s: %s", action_name.c_str(), entity.c_str(), error.c_str());
+                            planch::menu().result(scene, false, millis());
+                else:
+                  - homeassistant.action:
+                      action: !lambda return action_name;
+                      data:
+                        entity_id: !lambda return entity;
+                      on_success:
+                        - lambda: planch::menu().result(scene, true, millis());
+                      on_error:
+                        - lambda: |-
+                            ESP_LOGW("planch", "%s %s: %s", action_name.c_str(), entity.c_str(), error.c_str());
+                            planch::menu().result(scene, false, millis());
+
+interval:
+  - interval: 1s
+    then:
+      - lambda: planch::menu().tick(millis());
+
+# Backlight D8-D13 and status LEDs D2, D3: RGB lights in Home Assistant whose channels feed the
+# LED effect
+output:
+  - platform: template
+    id: backlight_r
+    type: float
+    write_action:
+      - lambda: planch::menu().set_backlight(0, state);
+  - platform: template
+    id: backlight_g
+    type: float
+    write_action:
+      - lambda: planch::menu().set_backlight(1, state);
+  - platform: template
+    id: backlight_b
+    type: float
+    write_action:
+      - lambda: planch::menu().set_backlight(2, state);
+
+  - platform: template
+    id: status2_r
+    type: float
+    write_action:
+      - lambda: planch::menu().set_status(0, 0, state);
+  - platform: template
+    id: status2_g
+    type: float
+    write_action:
+      - lambda: planch::menu().set_status(0, 1, state);
+  - platform: template
+    id: status2_b
+    type: float
+    write_action:
+      - lambda: planch::menu().set_status(0, 2, state);
+  - platform: template
+    id: status3_r
+    type: float
+    write_action:
+      - lambda: planch::menu().set_status(1, 0, state);
+  - platform: template
+    id: status3_g
+    type: float
+    write_action:
+      - lambda: planch::menu().set_status(1, 1, state);
+  - platform: template
+    id: status3_b
+    type: float
+    write_action:
+      - lambda: planch::menu().set_status(1, 2, state);
+
+light:
+  - platform: rgb
+    name: "Backlight"
+    red: backlight_r
+    green: backlight_g
+    blue: backlight_b
+  - platform: rgb
+    name: "Status LED 2"
+    red: status2_r
+    green: status2_g
+    blue: status2_b
+  - platform: rgb
+    name: "Status LED 3"
+    red: status3_r
+    green: status3_g
+    blue: status3_b
+  # The 13 LEDs: colours computed by planch::Menu (status, scene keys, backlight)
+  - platform: esp32_rmt_led_strip
+    id: led_chain
+    pin: ${led_pin}
+    num_leds: 13
+    chipset: SK6812
+    channel_colors: GRB
+    internal: true
+    color_correct: [40%, 40%, 40%]   # limits total current
+    effects:
+      - addressable_lambda:
+          name: PlancH
+          update_interval: 40ms
+          lambda: |-
+            planch::Rgb c[planch::Menu::LEDS];
+            planch::menu().leds(c, millis());
+            for (int i = 0; i < planch::Menu::LEDS && i < it.size(); i++) it[i] = Color(c[i].r, c[i].g, c[i].b);

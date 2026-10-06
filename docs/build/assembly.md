@@ -92,24 +92,18 @@ regular iron.**
 - [ ] Open the LED bag only when needed. MINI-Es are moisture sensitive (MSL 5a): if the bag
       has been open for a long time, the Opsco datasheet asks for baking at 70 °C for at
       least 12 hours before soldering.
-- [ ] Prepare the firmware: build `firmware/planch.yaml` with ESPHome and create `secrets.yaml`
-      next to it (see [Firmware](../firmware/index.md)).
+- [ ] Prepare the assembly test firmware `firmware/planch-bringup.yaml` (see
+      [Firmware](../firmware/index.md)): the Wi-Fi is set after flashing, no file to fill in.
 - [ ] Work on a soft mat with the front protected: matte black solder mask shows every
       scratch and every drop of flux.
 
 ### Test firmware
 
-To test LEDs and buttons as you go, without Home Assistant yet, temporarily add the ESPHome
-web server to the YAML file:
-
-```yaml
-# for testing only: remove once assembly is complete
-web_server:
-  port: 80
-```
-
+To test LEDs and buttons as you go, without Home Assistant yet, use the assembly test firmware
+[`firmware/planch-bringup.yaml`](https://github.com/caccia78/PlancH/blob/main/firmware/planch-bringup.yaml).
 After the first USB flash, open the module's IP address in a browser: you will see the three
-LED groups and the state of each button. LEDs not yet mounted are simply ignored.
+LED groups and the state of each button. LEDs not yet mounted are simply ignored. When the
+board is complete you switch to the final firmware (step 8).
 
 ## Work order
 
@@ -223,7 +217,9 @@ unconnected.</figcaption>
 !!! success "Test"
     - Plug in USB: the computer must detect the device. If it does not, hold the module's BOOT
       button while plugging in the cable.
-    - Flash with `esphome run firmware/planch.yaml`.
+    - Flash with `esphome run firmware/planch-bringup.yaml`, then set the Wi-Fi from
+      [web.esphome.io](https://web.esphome.io) (**Configure Wi-Fi**) or from the **PlancH**
+      hotspot the board opens.
     - Measure about 5 V across the C14 pads and about 3.3 V between TP1 and TP2.
     - The ESPHome log shows the module joining Wi-Fi.
 
@@ -492,10 +488,11 @@ the back.</figcaption>
 Keep it clean, with no tape or flux residue.
 
 - [ ] Clean flux residue on both sides.
-- [ ] In the YAML file keep `setup_mode: true` under `esp32_touch`, read the touch values in the
-      log at rest and with a finger on the ear, and set `threshold` about halfway.
-- [ ] Set `setup_mode: false`, remove the `web_server` block if you do not want to keep it and
-      flash again.
+- [ ] With the test firmware (`setup_mode: true` under `esp32_touch`) read the touch values in
+      the log at rest and with a finger on the ear: the threshold goes about halfway.
+- [ ] In the final firmware `firmware/planch.yaml` set that `threshold` and `setup_mode: false`,
+      then flash it (USB or over Wi-Fi): from now on the display shows the menu, see
+      [Home Assistant](../home-assistant/index.md).
 - [ ] Clean the foot circles with alcohol, let them dry and stick the 6 feet centred on the
       silkscreen circles. Press each one for 10 seconds.
 - [ ] Put the board on the desk: it must not rock and no LED must touch the surface.
@@ -512,12 +509,13 @@ Keep it clean, with no tape or flux residue.
 | Logic supply | TP1 – TP2 | 3.2–3.4 V |
 | I²C pull-ups (board off) | TP3 – TP1, TP4 – TP1 | 2–10 kΩ |
 | Display | ESPHome log | Device found at 0x3C, text visible |
-| LED chain | Web page or Home Assistant | 13 LEDs, pure colours correct |
-| Buttons | Web page or Home Assistant | 10 buttons, one state change per press |
+| LED chain | Test firmware web page | 13 LEDs, pure colours correct |
+| Buttons | Test firmware web page | 10 buttons, one state change per press |
 | Touch | ESPHome log | Triggers only with a finger on the ear |
+| Menu | Final firmware | Rooms and devices from Home Assistant on the display |
 
-All 10 buttons, the touch area, the display and the 3 LED groups should now be visible in
-[Home Assistant](../home-assistant/index.md).
+Then follow [Home Assistant](../home-assistant/index.md) to choose the devices and the scenes
+of the panel.
 
 ## Troubleshooting
 

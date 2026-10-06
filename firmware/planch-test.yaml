@@ -1,0 +1,72 @@
+# PlancH - test bench on an ESP-WROOM-32 without display, keys or LEDs.
+# The keys are buttons in Home Assistant; the screen and the 13 LEDs are published as text sensors
+# ("Screen", "LEDs"). Dashboard: homeassistant/planch-test-dashboard.yaml.
+# Wi-Fi is set after flashing, without secrets: from web.esphome.io ("Configure Wi-Fi", Improv serial)
+# or from the "PlancH test" hotspot that the board opens while it has no network.
+
+substitutions:
+  led_pin: GPIO26   # nothing connected: the LED code runs as on the real board
+
+esphome:
+  name: planch-test
+  friendly_name: PlancH test
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+logger:
+
+ota:
+  - platform: esphome
+wifi:
+  ap:
+    ssid: "PlancH test"
+captive_portal:
+improv_serial:
+
+packages:
+  core: !include planch/core.yaml
+
+# Virtual keys: same codes as the real keys (planch::Key)
+button:
+  - { platform: template, name: "Up", on_press: [script.execute: { id: planch_key, code: 0 }] }
+  - { platform: template, name: "Down", on_press: [script.execute: { id: planch_key, code: 1 }] }
+  - { platform: template, name: "Left", on_press: [script.execute: { id: planch_key, code: 2 }] }
+  - { platform: template, name: "Right", on_press: [script.execute: { id: planch_key, code: 3 }] }
+  - { platform: template, name: "OK", on_press: [script.execute: { id: planch_key, code: 4 }] }
+  - { platform: template, name: "Back", on_press: [script.execute: { id: planch_key, code: 5 }] }
+  - { platform: template, name: "Scene 1", on_press: [script.execute: { id: planch_key, code: 6 }] }
+  - { platform: template, name: "Scene 2", on_press: [script.execute: { id: planch_key, code: 7 }] }
+  - { platform: template, name: "Scene 3", on_press: [script.execute: { id: planch_key, code: 8 }] }
+  - { platform: template, name: "Scene 4", on_press: [script.execute: { id: planch_key, code: 9 }] }
+  - { platform: template, name: "Touch", on_press: [script.execute: { id: planch_key, code: 10 }] }
+
+# What the OLED and the LEDs would show, published only when it changes
+text_sensor:
+  - platform: template
+    id: screen
+    name: "Screen"
+    icon: mdi:monitor
+  - platform: template
+    id: leds
+    name: "LEDs"
+    icon: mdi:led-on
+
+interval:
+  - interval: 200ms
+    then:
+      - lambda: |-
+          static std::string last_screen, last_leds;
+          std::string s = planch::menu().text();
+          if (s != last_screen) {
+            last_screen = s;
+            id(screen).publish_state(s);
+            ESP_LOGI("planch", "screen:\n%s", s.c_str());
+          }
+          std::string l = planch::menu().leds_text(millis());
+          if (l != last_leds) {
+            last_leds = l;
+            id(leds).publish_state(l);
+          }
