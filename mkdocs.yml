@@ -45,7 +45,8 @@ extra_css:
   - stylesheets/extra.css
 
 extra_javascript:
-  - https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js
+  - path: https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js
+    type: module
 
 extra:
   # Amazon Associates tracking ID (for example "planch-21"). Empty = plain links.
