@@ -11,9 +11,30 @@ by room and by type. See [Home Assistant](../home-assistant/index.md) for the se
 | [`firmware/planch-bringup.yaml`](https://github.com/caccia78/PlancH/blob/main/firmware/planch-bringup.yaml) | Assembly test: buttons and LED groups on a web page, see the [assembly guide](../build/assembly.md) |
 | [`firmware/planch-test.yaml`](https://github.com/caccia78/PlancH/blob/main/firmware/planch-test.yaml) | Test bench on any ESP32 board, without the PlancH hardware |
 
-!!! info "Coming soon: install from the browser"
-    A one-click installer (ESP Web Tools) is planned: plug the board into your computer, open
-    this page in Chrome or Edge and press *Install*, without installing ESPHome.
+## Install from the browser
+
+The quickest way, with nothing to install: the firmware is built from this repository and
+written by the browser (Chrome or Edge on a computer).
+
+<script type="module" src="https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button.js?module"></script>
+
+<p>
+  <esp-web-install-button manifest="/PlancH/firmware/install/manifest.json">
+    <span slot="unsupported">This browser cannot talk to USB devices: open the page in Chrome or Edge on a computer.</span>
+    <span slot="not-allowed">The installer needs a secure (https) page.</span>
+  </esp-web-install-button>
+</p>
+
+1. Connect the board with a USB-C **data** cable and press **Connect** above.
+2. Choose the serial port of the board. If it does not appear, hold the **BOOT** button of the
+   ESP32-S3-Zero while plugging in the cable, then try again.
+3. Choose **Install PlancH**. Erasing the board is fine for a first installation.
+4. At the end choose **Configure Wi-Fi**, pick your network and type its password: it stays on
+   the board, not in any file.
+5. Add the board to Home Assistant as described in [Home Assistant](../home-assistant/index.md).
+
+The installer picks the firmware from the chip it finds: on an ESP32-S3 it installs PlancH, on a
+classic ESP32 it installs the [test bench](#test-bench-without-the-hardware).
 
 ## Flash with ESPHome
 

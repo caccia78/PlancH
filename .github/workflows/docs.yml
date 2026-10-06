@@ -1,5 +1,9 @@
 name: Documentation
 
+# Builds the website and the firmware for the browser installer (ESP Web Tools), then publishes
+# both on GitHub Pages: the installer must load the firmware from the same site.
+# The firmware is compiled only when firmware/ changes (cache keyed on its files).
+
 on:
   push:
     branches: [main]
@@ -8,6 +12,7 @@ on:
       - "hooks/**"
       - "media/**"
       - "production/**"
+      - "firmware/**"
       - "mkdocs.yml"
       - "requirements-docs.txt"
       - ".github/workflows/docs.yml"
@@ -22,11 +27,69 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+env:
+  ESPHOME_VERSION: "2026.9.1"   # the version the firmware is tested with
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # Firmware: PlancH for the ESP32-S3, the test bench for a classic ESP32
+      - name: Firmware cache
+        id: firmware-cache
+        uses: actions/cache@v4
+        with:
+          path: firmware-build
+          key: firmware-${{ env.ESPHOME_VERSION }}-${{ hashFiles('firmware/**') }}
+      - name: Build PlancH (ESP32-S3)
+        id: board
+        if: steps.firmware-cache.outputs.cache-hit != 'true'
+        uses: esphome/build-action@v8.1.0
+        with:
+          yaml-file: firmware/planch.yaml
+          version: ${{ env.ESPHOME_VERSION }}
+      - name: Build the test bench (ESP32)
+        id: bench
+        if: steps.firmware-cache.outputs.cache-hit != 'true'
+        uses: esphome/build-action@v8.1.0
+        with:
+          yaml-file: firmware/planch-test.yaml
+          version: ${{ env.ESPHOME_VERSION }}
+      - name: Collect firmware and write the ESP Web Tools manifest
+        if: steps.firmware-cache.outputs.cache-hit != 'true'
+        env:
+          BOARD: ${{ steps.board.outputs.name }}
+          BENCH: ${{ steps.bench.outputs.name }}
+          VERSION: ${{ steps.board.outputs.project-version }}
+        run: |
+          mkdir -p firmware-build
+          for d in "$BOARD" "$BENCH"; do
+            mkdir -p "firmware-build/$d"
+            cp "$d"/*.factory.bin "$d"/manifest.json "firmware-build/$d/"
+          done
+          python3 - <<'EOF'
+          import json, os
+          builds = []
+          for d in (os.environ["BOARD"], os.environ["BENCH"]):
+              part = json.load(open(f"firmware-build/{d}/manifest.json"))
+              for p in part["parts"]:
+                  p["path"] = f"{d}/{p['path']}"
+              part.pop("ota", None)   # only the factory image is published
+              builds.append(part)
+          manifest = {
+              "name": "PlancH",
+              "version": os.environ.get("VERSION") or "dev",
+              "home_assistant_domain": "esphome",
+              "new_install_prompt_erase": True,
+              "builds": builds,
+          }
+          json.dump(manifest, open("firmware-build/manifest.json", "w"), indent=2)
+          print(json.dumps(manifest, indent=2))
+          EOF
+
+      # Website
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -34,6 +97,11 @@ jobs:
           cache-dependency-path: requirements-docs.txt
       - run: pip install -r requirements-docs.txt
       - run: mkdocs build --strict
+      - name: Add the firmware to the site
+        run: |
+          mkdir -p site/firmware/install
+          cp -r firmware-build/. site/firmware/install/
+          ls -R site/firmware/install
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

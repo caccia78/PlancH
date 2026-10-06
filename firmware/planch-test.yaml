@@ -10,6 +10,9 @@ substitutions:
 esphome:
   name: planch-test
   friendly_name: PlancH test
+  project:
+    name: "caccia78.planch-test"
+    version: "1.0.0"
 
 esp32:
   board: esp32dev
