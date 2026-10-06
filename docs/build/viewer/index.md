@@ -1,8 +1,16 @@
 # 3D Viewer
 
-Explore PlancH in 3D — rotate, zoom, and pan to inspect every detail of the circuit board.
+Explore the complete PlancH circuit board in 3D. Rotate, zoom, and inspect every component, connection, and detail.
 
-<iframe src="../../assets/viewer-3d.html" style="width: 100%; height: 500px; border: 1px solid var(--md-border-color); border-radius: 8px; margin: 2rem 0;"></iframe>
+## View the 3D model
+
+[**Open 3D Viewer** →](../../assets/viewer-3d.html){: .md-button .md-button--primary }
+
+The viewer opens in a full window. Use your mouse to:
+
+- **Rotate** — Click and drag
+- **Zoom** — Scroll wheel
+- **Pan** — Right-click and drag
 
 ## About this model
 
@@ -10,14 +18,12 @@ The 3D model includes:
 
 - **PCB** — 120 × 44 mm + 8 mm ear, 2.0 mm thickness with black solder mask and white silkscreen
 - **Components** — ESP32-S3 module, OLED display, 10 tactile buttons, 13 addressable RGB LEDs
-- **Silkscreen** — Front frame, scene button icons, touch area indicator, rear silkscreen with component labels
-
-Click and drag to rotate, scroll to zoom, right-click to pan.
+- **Silkscreen** — Front frame, scene button icons, touch area indicator, rear component labels
 
 ## Desk stand
 
 The desk stand (leggio) is designed to hold PlancH at a 20° angle. You can [learn more](../accessories/desk-stand.md) about printing and assembling it.
 
-## Model source
+## Source files
 
-The 3D model is exported directly from the KiCad PCB design file using `kicad-cli`. All dimensions and component placements match the actual board. Find the source files on [GitHub](https://github.com/caccia78/PlancH/tree/main/hardware).
+The 3D model is exported directly from the KiCad PCB design using `kicad-cli`. All dimensions and placements match the actual board. Source files are on [GitHub](https://github.com/caccia78/PlancH/tree/main/hardware).
