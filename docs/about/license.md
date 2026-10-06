@@ -14,7 +14,8 @@ designs based on PlancH, you must make your modified sources available under the
 and keep the source location visible on the product. The back of the board already carries it:
 `github.com/caccia78/planch`.
 
-Details and third-party content (KiCad library models, the Waveshare module model) are in
+Details and third-party content (KiCad library models, the Waveshare module model, the CC0
+music of the video) are in
 [LICENSE.md](https://github.com/caccia78/PlancH/blob/main/LICENSE.md).
 
 © 2026 Vincenzo Cacciatore
