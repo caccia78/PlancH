@@ -18,7 +18,9 @@ onto the desk.
 
 ## 3D View
 
-Inspect the stand design in 3D, on its own or with the board in place:
+Inspect the stand design in 3D, on its own or with the board in place. With the board shown
+you can also switch on the LEDs: the backlight shining on the desk is suggested by the glowing
+light slots.
 
 <div style="margin: 2rem 0 0.5rem; border: 1px solid var(--md-border-color); border-radius: 8px; overflow: hidden;">
   <model-viewer 
@@ -31,27 +33,67 @@ Inspect the stand design in 3D, on its own or with the board in place:
   </model-viewer>
 </div>
 
-<p><button type="button" class="md-button" id="leggio-scheda" aria-pressed="false">Show the board</button></p>
+<p>
+  <button type="button" class="md-button" id="leggio-scheda" aria-pressed="false">Show the board</button>
+  <span id="leggio-led-controlli" hidden>
+    <button type="button" class="md-button" id="leggio-led" aria-pressed="false">Turn on the LEDs</button>
+    <label>Colour <input type="color" id="leggio-colore" value="#ff7043"></label>
+  </span>
+</p>
 
 <script>
   (() => {
     const viewer = document.getElementById("leggio-3d");
-    const button = document.getElementById("leggio-scheda");
+    const boardButton = document.getElementById("leggio-scheda");
+    const ledControls = document.getElementById("leggio-led-controlli");
+    const ledButton = document.getElementById("leggio-led");
+    const ledColour = document.getElementById("leggio-colore");
     const models = {
       false: "/PlancH/assets/leggio-viewer.glb",
       true: "/PlancH/assets/leggio-assieme-viewer.glb",
     };
-    button.addEventListener("click", () => {
-      const show = button.getAttribute("aria-pressed") !== "true";
+    let ledsOn = false;
+
+    // glTF colour factors are linear, the colour picker is sRGB
+    const linear = (hex) => [1, 3, 5].map((i) => {
+      const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+      return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+
+    // Material names written by mechanical/leggio.py
+    const applyLeds = () => {
+      if (!viewer.model) return;
+      const rgb = linear(ledColour.value);
+      for (const name of ["led_stato", "led_scene", "led_retro"]) {
+        const led = viewer.model.getMaterialByName(name);
+        if (!led) continue;
+        led.setEmissiveFactor(ledsOn ? rgb : [0, 0, 0]);
+        led.pbrMetallicRoughness.setBaseColorFactor(ledsOn ? [...rgb, 1] : [0.85, 0.85, 0.85, 1]);
+      }
+      const slots = viewer.model.getMaterialByName("luce_retro");
+      if (slots) {
+        slots.setEmissiveFactor(ledsOn ? rgb : [0, 0, 0]);
+        slots.pbrMetallicRoughness.setBaseColorFactor(ledsOn ? [...rgb, 0.85] : [1, 1, 1, 0]);
+      }
+      ledButton.setAttribute("aria-pressed", String(ledsOn));
+      ledButton.textContent = ledsOn ? "Turn off the LEDs" : "Turn on the LEDs";
+    };
+    viewer.addEventListener("load", applyLeds);
+
+    boardButton.addEventListener("click", () => {
+      const show = boardButton.getAttribute("aria-pressed") !== "true";
       const orbit = viewer.getCameraOrbit();
       viewer.addEventListener("load", () => {
         viewer.cameraOrbit = `${orbit.theta}rad ${orbit.phi}rad ${orbit.radius}m`;
         viewer.jumpCameraToGoal();
       }, { once: true });
       viewer.src = models[show];
-      button.setAttribute("aria-pressed", String(show));
-      button.textContent = show ? "Hide the board" : "Show the board";
+      boardButton.setAttribute("aria-pressed", String(show));
+      boardButton.textContent = show ? "Hide the board" : "Show the board";
+      ledControls.hidden = !show;
     });
+    ledButton.addEventListener("click", () => { ledsOn = !ledsOn; applyLeds(); });
+    ledColour.addEventListener("input", () => { ledsOn = true; applyLeds(); });
   })();
 </script>
 

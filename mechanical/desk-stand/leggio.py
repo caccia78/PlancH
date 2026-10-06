@@ -81,6 +81,18 @@ def fessure_luce(piedini):
     return tagli
 
 
+def luci_fessure(piedini):
+    """Pannelli sottili a metà parete di ogni fessura: nel viewer 3D si illuminano con la
+    retroilluminazione, che il modello non può proiettare davvero."""
+    pannelli = []
+    for (x, y), (nx, ny) in FESSURE_SPEC:
+        ang = math.degrees(math.atan2(-ny, nx))
+        d = GIOCO + PARETE / 2
+        pannelli.append(Pos(*p(x + nx * d, y + ny * d), 0) * Rot(Z=ang)
+                        * Box(0.2, FESSURA, piedini, align=(Align.CENTER, Align.CENTER, Align.MIN)))
+    return pannelli
+
+
 def poligono(sagoma, passo):
     """Contorno di una sagoma piana campionato a passo costante, con normale verso +Z.
 
@@ -152,7 +164,11 @@ def esporta(leggio, scheda, piedi):
     export_step(Compound(children=[leggio, scheda, *piedi]), str(USCITA / "leggio-assieme.step"))
 
 
-def esporta_glb(leggio, piedi, sposta):
+# Gruppi dei LED come nel firmware; il viewer 3D li accende cambiando questi materiali
+GRUPPI_LED = {"led_stato": range(1, 4), "led_scene": range(4, 8), "led_retro": range(8, 14)}
+
+
+def esporta_glb(leggio, piedi, sposta, piedini):
     """GLB per il viewer 3D del sito: leggio da solo e assieme con la scheda. glTF vuole metri
     e Y in alto: (x, y, z) dello STEP -> (x, z, -y) / 1000, come fa kicad-cli."""
     import numpy as np
@@ -183,11 +199,25 @@ def esporta_glb(leggio, piedi, sposta):
     porta = gltf @ m @ np.linalg.inv(gltf)
     scheda = trimesh.load(str(GLB_SCHEDA), force="scene")
     grigio = PBRMaterial(name="senza_materiale", baseColorFactor=[0.4, 0.4, 0.4, 1.0])
+    led = {f"D{n}": g for g, numeri in GRUPPI_LED.items() for n in numeri}
+    genitori = scheda.graph.transforms.parents
+
+    def gruppo_led(nodo):
+        while nodo in genitori:
+            nodo = genitori[nodo]
+            if nodo in led:
+                return led[nodo]
+        return None
+
     gruppi = {}
     for nodo in scheda.graph.nodes_geometry:
         tr, nome = scheda.graph[nodo]
         parte = scheda.geometry[nome]
         materiale = getattr(parte.visual, "material", grigio)   # alcune primitive non ne hanno
+        g = gruppo_led(nodo)
+        if g:   # LED interi (corpo e piedini) in un materiale proprio per gruppo
+            materiale = PBRMaterial(name=g, baseColorFactor=[0.85, 0.85, 0.85, 1.0],
+                                    metallicFactor=0.0, roughnessFactor=0.4)
         gruppi.setdefault(materiale.name, (materiale, []))[1].append((parte, porta @ tr))
     assieme = trimesh.Scene()
     for nome, (materiale, parti) in gruppi.items():
@@ -206,6 +236,10 @@ def esporta_glb(leggio, piedi, sposta):
     for i, f in enumerate(piedi, 1):
         assieme.add_geometry(mesh(f, "piedino", [0.85, 0.92, 0.97, 0.6], "BLEND"),
                              node_name=f"piedino_{i}", geom_name=f"piedino_{i}")
+    cornice = sposta * Pos(0, 0, -piedini)   # sistema della cornice, come i tagli delle fessure
+    luci = Compound(children=[cornice * f for f in luci_fessure(piedini)])
+    assieme.add_geometry(mesh(luci, "luce_retro", [1.0, 1.0, 1.0, 0.0], "BLEND"),   # spente
+                         node_name="luce_retro", geom_name="luce_retro")
     assieme.export(str(USCITA / "leggio-assieme.glb"), include_normals=True)
 
 
@@ -266,7 +300,7 @@ if __name__ == "__main__":
     print(f"Leggio: {bb.size.X:.1f} x {bb.size.Y:.1f} x {bb.size.Z:.1f} mm, "
           f"volume {leggio.volume / 1000:.1f} cm³, solidi {len(leggio.solids())}")
     esporta(leggio, scheda, piedi)
-    esporta_glb(leggio, piedi, sposta)
+    esporta_glb(leggio, piedi, sposta, args.piedini)
     if args.render:
         render([(leggio, "#e8e6e1")], "leggio-render.png", (0.45, -0.75, 0.75))
         render(parti_colorate(leggio, scheda, piedi), "leggio-assieme-fronte.png", (0.35, -0.8, 0.5))
