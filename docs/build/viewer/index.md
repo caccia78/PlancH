@@ -2,6 +2,8 @@
 
 Explore the complete PlancH circuit board in 3D. Rotate, zoom, and inspect every component, connection, and detail.
 
+--8<-- "model-viewer.html"
+
 <div style="margin: 2rem 0; border: 1px solid var(--md-border-color); border-radius: 8px; overflow: hidden;">
   <model-viewer 
     id="planch-3d"

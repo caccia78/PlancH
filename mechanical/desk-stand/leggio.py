@@ -188,7 +188,7 @@ def esporta_glb(leggio, piedi, sposta, piedini):
             alphaMode=alpha))
         return m
 
-    corpo = mesh(leggio, "leggio", [0.91, 0.90, 0.88, 1.0])
+    corpo = mesh(leggio, "leggio", [0.807, 0.791, 0.753, 1.0])   # #e8e6e1 dei render, lineare
     trimesh.Scene({"leggio": corpo}).export(str(USCITA / "leggio.glb"), include_normals=True)
 
     # La scheda di kicad-cli è già nel sistema glTF: si porta sui piedini con lo stesso
@@ -214,6 +214,9 @@ def esporta_glb(leggio, piedi, sposta, piedini):
         tr, nome = scheda.graph[nodo]
         parte = scheda.geometry[nome]
         materiale = getattr(parte.visual, "material", grigio)   # alcune primitive non ne hanno
+        if materiale.alphaMode == "BLEND":   # maschera e corpo della scheda: KiCad li fa
+            materiale.alphaMode = None       # semitrasparenti, il circuito vero è opaco
+            materiale.baseColorFactor = [*materiale.baseColorFactor[:3], 255]
         g = gruppo_led(nodo)
         if g:   # LED interi (corpo e piedini) in un materiale proprio per gruppo
             materiale = PBRMaterial(name=g, baseColorFactor=[0.85, 0.85, 0.85, 1.0],
