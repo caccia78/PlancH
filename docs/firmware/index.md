@@ -72,9 +72,9 @@ the controls of one device.
 
 | Key | In the lists | On a device |
 | --- | --- | --- |
-| Up, Down | Move | Light: move through its rows, and past the last row on to the next light. Thermostat: previous / next. Cover: open / close |
-| OK | Enter | Light, thermostat: on / off. Cover: stop |
-| Left, Right | Back / enter | Light: change the selected row. Thermostat: −/+ 0.5 °C |
+| Up, Down | Move | Light: move through its rows, and past the last row on to the next light. Switch, thermostat: previous / next. Cover: open / close |
+| OK | Enter | Light, switch, thermostat: on / off. Cover: stop |
+| Left, Right | Back / enter | Light: change the selected row. Switch: off / on. Thermostat: −/+ 0.5 °C |
 | Back | Go back | Go back to the list |
 | Scene 1–4 | Run the scene, script or automation assigned in Home Assistant | Same |
 | Touch | Wake the display | Wake the display |
@@ -116,6 +116,7 @@ LED brightness is limited to 40% in the firmware to keep the USB current low.
 | Entity | Type | Notes |
 | --- | --- | --- |
 | Up, Down, Left, Right, OK, Back, Scene 1 – Scene 4 | Binary sensor | `on` while pressed: you can use them in automations too |
+| Panel | Text | Name of the panel, picks its devices: see [More than one PlancH](../home-assistant/index.md#more-than-one-planch) |
 | Touch | Binary sensor | Capacitive area on the ear, calibrate the threshold |
 | Status LED 2, Status LED 3 | Light (RGB) | D2 and D3 on the ear |
 | Backlight | Light (RGB) | D8–D13, towards the desk (or the wall) |

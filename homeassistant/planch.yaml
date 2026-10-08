@@ -6,16 +6,22 @@
 # then restart Home Assistant (or reload template entities).
 #
 # Use:
-# - Put the label "PlancH" on the lights, covers and thermostats (climate) to control, or on
-#   their device. PlancH groups them by area (room) and by type; no area -> "Other".
+# - Put the label "PlancH" on the lights, switches (smart plugs), covers and thermostats
+#   (climate) to control, or on their device: they appear on every panel. PlancH groups them by
+#   area (room) and by type; no area -> "Other".
+# - Several panels: give each one a name in the field "Panel" on its device page (for example
+#   Studio) and put the label "PlancH Studio" on the devices for that panel only. A device can
+#   have several labels. Panels without a name, or with a name without a label, show the
+#   "PlancH" devices. Up to 6 named panels.
 # - Put the labels "PlancH S1" ... "PlancH S4" on the scene, script or automation for each scene
-#   key (one entity per label).
+#   key (one entity per label); "PlancH Studio S1" ... apply to the panel Studio only and win
+#   over the shared ones.
 # - In the ESPHome integration options of the panel enable
 #   "Allow the device to perform Home Assistant actions".
 #
-# Limits (memory of the ESP32 and size of the OLED): 8 rooms, 8 devices per room, 32 devices in
-# total, names shown up to 16 characters. Beyond the limits the list is cut and the panel shows
-# "limit!". When labels or areas change, the automation below refreshes the menu within a
+# Limits (memory of the ESP32 and size of the OLED): 8 rooms, 8 devices per room, 32 devices
+# per panel, names shown up to 16 characters. Beyond the limits the list is cut and the panel
+# shows "limit!". When labels or areas change, the automation below refreshes the menu within a
 # couple of seconds; states are always followed live.
 #
 # The attributes start with "planch1:" (format version): it keeps them plain strings in Home
@@ -48,22 +54,50 @@ template:
       - name: "PlancH menu"
         unique_id: planch_menu
         icon: mdi:gesture-tap-button
-        # Number of labelled devices (also beyond the limits)
+        # Number of labelled devices on all panels (also beyond the limits)
         state: >-
-          {%- set ns = namespace(ids=label_entities('PlancH')) %}
-          {%- for d in label_devices('PlancH') %}{% set ns.ids = ns.ids + device_entities(d) %}{% endfor %}
-          {{ ns.ids | unique | select('match', '(light|cover|climate)\.') | list | count }}
+            {%- set ns_p = namespace(panels=[('', 'PlancH')]) %}
+            {%- for l in labels() %}
+              {%- set n = label_name(l) or '' %}
+              {%- if n | lower is match('planch .+') and not (n | lower is match('^planch( .+)? s[1-4]$')) %}
+                {%- set ns_p.panels = ns_p.panels + [(n[7:] | trim | lower, n)] %}
+              {%- endif %}
+            {%- endfor %}
+            {%- set panels = (ns_p.panels | sort(attribute='0'))[:7] %}
+            {%- set ns = namespace(ids=[]) %}
+            {%- for key, label in panels %}
+              {%- set ns.ids = ns.ids + label_entities(label) %}
+              {%- for d in label_devices(label) %}{% set ns.ids = ns.ids + device_entities(d) %}{% endfor %}
+            {%- endfor %}
+            {{ ns.ids | unique | select('match', '(light|switch|cover|climate)\.') | list | count }}
         attributes:
-          # {"r": [{"n": room, "d": [{"e": entity, "n": name, "t": l|c|h, "s": state,
+          # One menu per panel: {"": menu of the shared devices (label "PlancH"), "studio": menu of
+          # the panel named Studio (labels "PlancH" and "PlancH Studio"), ...}; the panel reads the
+          # one with its name (field "Panel" on its device page). Each menu:
+          # {"r": [{"n": room, "d": [{"e": entity, "n": name, "t": l|s|c|h, "s": state,
           #   "v": brightness % | position % | target temperature, "c": current temperature,
           #   lights only: "m": features (b brightness, c colour, t white, e effects),
           #   "hs": [hue, saturation], "k": white kelvin, "kr": [min, max], "f": effect}]}],
           #  "w": 1 if the limits cut the list}
-          menu: >-
+          menus: >-
             {%- set max_rooms, max_per_room, max_total = 8, 8, 32 %}
+            {%- set ns_p = namespace(panels=[('', 'PlancH')]) %}
+            {%- for l in labels() %}
+              {%- set n = label_name(l) or '' %}
+              {%- if n | lower is match('planch .+') and not (n | lower is match('^planch( .+)? s[1-4]$')) %}
+                {%- set ns_p.panels = ns_p.panels + [(n[7:] | trim | lower, n)] %}
+              {%- endif %}
+            {%- endfor %}
+            {%- set panels = (ns_p.panels | sort(attribute='0'))[:7] %}
+            {%- set out = namespace(menus=[]) %}
+            {%- for key, label in panels %}
             {%- set ns = namespace(ids=label_entities('PlancH')) %}
             {%- for d in label_devices('PlancH') %}{% set ns.ids = ns.ids + device_entities(d) %}{% endfor %}
-            {%- set ids = ns.ids | unique | select('match', '(light|cover|climate)\.') | list %}
+            {%- if key %}
+              {%- set ns.ids = ns.ids + label_entities(label) %}
+              {%- for d in label_devices(label) %}{% set ns.ids = ns.ids + device_entities(d) %}{% endfor %}
+            {%- endif %}
+            {%- set ids = ns.ids | unique | select('match', '(light|switch|cover|climate)\.') | list %}
             {%- set ns = namespace(areas=[], rooms=[], total=0, cut=false) %}
             {%- for e in ids %}{% set ns.areas = ns.areas + [area_name(e) or 'Other'] %}{% endfor %}
             {%- set areas = ns.areas | unique | sort | list %}
@@ -91,6 +125,8 @@ template:
                                   'k': state_attr(e, 'color_temp_kelvin') if 't' in m else none,
                                   'kr': [state_attr(e, 'min_color_temp_kelvin'), state_attr(e, 'max_color_temp_kelvin')] if 't' in m else none,
                                   'f': (state_attr(e, 'effect') or '')[:11] if 'e' in m else none} %}
+                {%- elif kind == 'switch' %}
+                  {%- set item = {'e': e, 'n': name[:16], 't': 's', 's': s} %}
                 {%- elif kind == 'cover' %}
                   {%- set pos = state_attr(e, 'current_position') %}
                   {%- set item = {'e': e, 'n': name[:16], 't': 'c', 's': s, 'v': pos if pos is number else none} %}
@@ -107,7 +143,9 @@ template:
                 {%- set ns.total = ns.total + devs | count %}
               {%- endif %}
             {%- endfor %}
-            {{ 'planch1:' ~ ({'r': ns.rooms, 'w': 1 if ns.cut else 0} | to_json) }}
+            {%- set out.menus = out.menus + [(key, {'r': ns.rooms, 'w': 1 if ns.cut else 0})] %}
+            {%- endfor %}
+            {{ 'planch1:' ~ (dict(out.menus) | to_json) }}
           # Colours of the Colour row on the panel, in this order: [name, hue 0-360, saturation 0-100].
           # Change them as you like (names up to 10 characters).
           palette: >-
@@ -116,13 +154,25 @@ template:
               ['Pink', 330, 65], ['Violet', 275, 80], ['Blue', 225, 100], ['Cyan', 185, 90],
               ['Green', 120, 90], ['Yellow', 55, 90]] %}
             {{ 'planch1:' ~ ({'p': palette} | to_json) }}
-          # {"1": {"e": entity, "n": name, "a": 1 if active}, ... "4": ...} from the labels
-          # "PlancH S1" ... "PlancH S4". Active: the most recently activated of the four (scene and
-          # button: state; script and automation: last_triggered), and a script while it runs.
-          scene: >-
-            {%- set ns = namespace(items=[], best=0, best_t='') %}
+          # Scene keys per panel: {"": {"1": {"e": entity, "n": name, "a": 1 if active}, ...},
+          # "studio": {...}}. Labels "PlancH S1" ... "PlancH S4" for all panels, "PlancH Studio S1"
+          # ... for one panel, with priority. Active: the most recently activated of the four (scene
+          # and button: state; script and automation: last_triggered), and a script while it runs.
+          scenes: >-
+            {%- set ns_p = namespace(panels=[('', 'PlancH')]) %}
+            {%- for l in labels() %}
+              {%- set n = label_name(l) or '' %}
+              {%- if n | lower is match('planch .+') and not (n | lower is match('^planch( .+)? s[1-4]$')) %}
+                {%- set ns_p.panels = ns_p.panels + [(n[7:] | trim | lower, n)] %}
+              {%- endif %}
+            {%- endfor %}
+            {%- set panels = (ns_p.panels | sort(attribute='0'))[:7] %}
+            {%- set out = namespace(panels=[]) %}
+            {%- for key, label in panels %}
+            {%- set ns = namespace(items=[], keys=[], best=0, best_t='') %}
             {%- for k in range(1, 5) %}
-              {%- set e = label_entities('PlancH S' ~ k) | first %}
+              {%- set e = ((label_entities(label ~ ' S' ~ k) if key else []) + label_entities('PlancH S' ~ k)) | first %}
+              {%- set ns.keys = ns.keys + [e or ''] %}
               {%- if e %}
                 {%- set kind = e.split('.')[0] %}
                 {%- set t = (states(e) if kind in ['scene', 'button', 'input_button'] else state_attr(e, 'last_triggered')) | string %}
@@ -131,10 +181,12 @@ template:
               {%- endif %}
             {%- endfor %}
             {%- for k in range(1, 5) %}
-              {%- set e = label_entities('PlancH S' ~ k) | first %}
+              {%- set e = ns.keys[k - 1] %}
               {%- if e %}
                 {%- set active = k == ns.best or (e.startswith('script.') and is_state(e, 'on')) %}
                 {%- set ns.items = ns.items + [(k | string, {'e': e, 'n': (state_attr(e, 'friendly_name') or e)[:16], 'a': 1 if active else 0})] %}
               {%- endif %}
             {%- endfor %}
-            {{ 'planch1:' ~ (dict(ns.items) | to_json) }}
+            {%- set out.panels = out.panels + [(key, dict(ns.items))] %}
+            {%- endfor %}
+            {{ 'planch1:' ~ (dict(out.panels) | to_json) }}

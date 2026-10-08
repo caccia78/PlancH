@@ -20,6 +20,25 @@ esphome:
 
 json:
 
+# Name of the panel, set from its device page in Home Assistant (for example Studio): it shows the
+# devices with the labels "PlancH" and "PlancH Studio". Kept in the panel's memory.
+text:
+  - platform: template
+    id: panel_name
+    name: "Panel"
+    icon: mdi:label-outline
+    entity_category: config
+    mode: text
+    max_length: 24
+    optimistic: true
+    restore_value: true
+    initial_value: ""
+    on_value:
+      - lambda: |-
+          planch::menu().set_panel(x);
+          planch::menu().set_menus(id(ha_menu).state);   // menus already received: pick again
+          planch::menu().set_scenes(id(ha_scenes).state);
+
 api:
   on_client_connected:
     - lambda: planch::menu().set_connected(true);
@@ -27,14 +46,15 @@ api:
     - lambda: planch::menu().set_connected(false);
 
 text_sensor:
-  # Menu built by Home Assistant: rooms, types, devices with their state (JSON)
+  # Menus built by Home Assistant, one per panel: rooms, types, devices with their state (JSON);
+  # the panel keeps only its own (field "Panel")
   - platform: homeassistant
     id: ha_menu
     entity_id: sensor.planch_menu
-    attribute: menu
+    attribute: menus
     internal: true
     on_value:
-      - lambda: planch::menu().set_menu(x);
+      - lambda: planch::menu().set_menus(x);
   # Colours of the Colour row of a light (palette defined in the package)
   - platform: homeassistant
     id: ha_palette
@@ -43,11 +63,11 @@ text_sensor:
     internal: true
     on_value:
       - lambda: planch::menu().set_palette(x);
-  # Entities assigned to the scene keys with the labels "PlancH S1" ... "PlancH S4"
+  # Entities assigned to the scene keys (labels "PlancH S1" ... and "PlancH <panel> S1" ...)
   - platform: homeassistant
     id: ha_scenes
     entity_id: sensor.planch_menu
-    attribute: scene
+    attribute: scenes
     internal: true
     on_value:
       - lambda: planch::menu().set_scenes(x);

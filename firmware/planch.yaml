@@ -10,6 +10,7 @@ substitutions:
 esphome:
   name: planch
   friendly_name: PlancH
+  name_add_mac_suffix: true   # every panel gets its own name (planch-xxxxxx)
   project:
     name: "caccia78.planch"
     version: "1.0.0"

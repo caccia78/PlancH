@@ -30,6 +30,11 @@ the back of the board.
 - Colour lights: rows Brightness, Colour (palette editable in the package), White and Effect on the
   screen of a light; Up/Down scroll through the rows and on to the next light.
 - The menu follows label and area changes by itself (automation in the package).
+- Switches (smart plugs) in the menu, under "Switches".
+- More than one PlancH in the same home: the label "PlancH" for devices on every panel,
+  "PlancH <name>" for one panel only; the name is set in the "Panel" field on the device page.
+  Scene keys per panel with "PlancH <name> S1" … "S4". Panels installed from the browser get a
+  unique name (planch-xxxxxx).
 - Install from the browser: the Firmware page installs PlancH on its ESP32-S3; a separate page,
   "Try it without the hardware", installs the test bench on a classic ESP32.
 - Home Assistant card `planch-card`: the panel drawn on its picture, with display, LEDs,

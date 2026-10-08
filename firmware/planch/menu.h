@@ -7,6 +7,7 @@
 #include <ArduinoJson.h>
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -19,7 +20,7 @@ enum Key { UP, DOWN, LEFT, RIGHT, OK, BACK, S1, S2, S3, S4, TOUCH };
 
 struct Device {
   std::string entity, name, state;
-  char type = 0;        // 'l' light, 'c' cover, 'h' climate (heating)
+  char type = 0;        // 'l' light, 's' switch, 'c' cover, 'h' climate (heating)
   float value = NAN;    // light brightness %, cover position %, climate target temperature
   float current = NAN;  // climate current temperature
   // Lights: supported features ('b' brightness, 'c' colour, 't' white temperature, 'e' effects),
@@ -70,12 +71,51 @@ class Menu {
   static constexpr int LEDS = 13;
 
   // ---- data from Home Assistant -------------------------------------------------------------
+  // Reads into doc only the value with the key of this panel ("" if missing)
+  bool pick_(const std::string &json, JsonDocument &doc) const {
+    const char *src = json_start_(json);
+    for (const std::string &key : {panel_, std::string()}) {
+      JsonDocument filter;
+      filter[key] = true;
+      JsonDocument all;
+      if (deserializeJson(all, src, DeserializationOption::Filter(filter)) != DeserializationError::Ok) return false;
+      if (!all[key].isNull()) {
+        doc.set(all[key]);
+        return true;
+      }
+    }
+    doc.to<JsonObject>();   // no menu for this panel nor shared: empty
+    return true;
+  }
+
   // The attributes start with a version prefix ("planch1:") that keeps them strings in HA
   static const char *json_start_(const std::string &s) {
     size_t p = s.find('{');
     return p == std::string::npos ? "" : s.c_str() + p;
   }
 
+  // Name of the panel (field "Panel" in Home Assistant): picks its menu and scenes
+  void set_panel(const std::string &name) {
+    std::string key;
+    for (char c : name) key += char(std::tolower(static_cast<unsigned char>(c)));
+    size_t a = key.find_first_not_of(' '), b = key.find_last_not_of(' ');
+    panel_ = a == std::string::npos ? "" : key.substr(a, b - a + 1);
+  }
+  const std::string &panel() const { return panel_; }
+
+  // Attribute "menus": {"": shared menu, "studio": menu of the panel Studio, ...}. Only the part
+  // of this panel is read (ArduinoJson filter); without one, the shared menu.
+  void set_menus(const std::string &json) {
+    JsonDocument doc;
+    if (!pick_(json, doc)) {
+      rooms_.clear();
+      valid_ = false;
+      return;
+    }
+    apply_menu_(doc.as<JsonObjectConst>());
+  }
+
+  // A single menu, as in each value of "menus"
   void set_menu(const std::string &json) {
     JsonDocument doc;
     if (deserializeJson(doc, json_start_(json)) != DeserializationError::Ok) {
@@ -83,11 +123,15 @@ class Menu {
       valid_ = false;
       return;
     }
+    apply_menu_(doc.as<JsonObjectConst>());
+  }
+
+  void apply_menu_(JsonObjectConst doc) {
     std::vector<Room> rooms;
-    for (JsonObject r : doc["r"].as<JsonArray>()) {
+    for (JsonObjectConst r : doc["r"].as<JsonArrayConst>()) {
       Room room;
       room.name = r["n"] | "";
-      for (JsonObject d : r["d"].as<JsonArray>()) {
+      for (JsonObjectConst d : r["d"].as<JsonArrayConst>()) {
         Device dev;
         dev.entity = d["e"] | "";
         dev.name = d["n"] | "";
@@ -97,12 +141,12 @@ class Menu {
         if (!d["v"].isNull()) dev.value = d["v"].as<float>();
         if (!d["c"].isNull()) dev.current = d["c"].as<float>();
         dev.modes = d["m"] | "";
-        if (d["hs"].is<JsonArray>()) {
+        if (d["hs"].is<JsonArrayConst>()) {
           dev.hue = d["hs"][0].as<float>();
           dev.sat = d["hs"][1].as<float>();
         }
         if (!d["k"].isNull()) dev.kelvin = d["k"].as<float>();
-        if (d["kr"].is<JsonArray>()) {
+        if (d["kr"].is<JsonArrayConst>()) {
           dev.kmin = d["kr"][0] | 2000.0f;
           dev.kmax = d["kr"][1] | 6500.0f;
         }
@@ -131,10 +175,11 @@ class Menu {
     }
   }
 
+  // Attribute "scenes": {"": shared keys, "studio": keys of the panel Studio, ...}
   void set_scenes(const std::string &json) {
     JsonDocument doc;
     for (auto &s : scenes_) s = Scene();
-    if (deserializeJson(doc, json_start_(json)) != DeserializationError::Ok) return;
+    if (!pick_(json, doc)) return;
     for (int i = 0; i < 4; i++) {
       JsonObject s = doc[std::to_string(i + 1)];
       if (s.isNull()) continue;
@@ -272,6 +317,7 @@ class Menu {
 
   std::vector<Room> rooms_;
   std::vector<Colour> palette_;
+  std::string panel_;
   int row_ = 0;  // selected row in the screen of a light
   Scene scenes_[4];
   bool valid_ = false, warning_ = false, connected_ = false, screen_on_ = true;
@@ -291,7 +337,7 @@ class Menu {
   static Rgb rgb_(const float *c) { return Rgb{uint8_t(c[0] * 255), uint8_t(c[1] * 255), uint8_t(c[2] * 255)}; }
 
   static const char *type_name_(char t) {
-    return t == 'l' ? "Lights" : t == 'c' ? "Covers" : t == 'h' ? "Heating" : "?";
+    return t == 'l' ? "Lights" : t == 's' ? "Switches" : t == 'c' ? "Covers" : t == 'h' ? "Heating" : "?";
   }
 
   static std::string scene_action_(const std::string &entity) {
@@ -314,6 +360,8 @@ class Menu {
       case 'l':
         if (d.state != "on") return "off";
         return std::isnan(d.value) ? "on" : fmt_(d.value, "%.0f%%");
+      case 's':
+        return d.state == "on" ? "on" : "off";
       case 'c':
         if (d.state == "opening" || d.state == "closing") return d.state;
         if (!std::isnan(d.value) && d.value >= 0 && d.value <= 100) {
@@ -329,7 +377,7 @@ class Menu {
 
   std::vector<char> types_(const Room &room) const {
     std::vector<char> out;
-    for (char t : {'l', 'c', 'h'})
+    for (char t : {'l', 's', 'c', 'h'})
       for (const Device &d : room.devices)
         if (d.type == t) {
           out.push_back(t);
@@ -444,6 +492,17 @@ class Menu {
     switch (d->type) {
       case 'l':
         light_key_(*d, k, calls);
+        break;
+      case 's':   // switch: OK on/off, Left off, Right on, Up/Down the next switch
+        if (k == OK) {
+          calls.push_back({"switch.toggle", e, "", ""});
+          d->state = d->state == "on" ? "off" : "on";
+        } else if (k == LEFT || k == RIGHT) {
+          calls.push_back({k == LEFT ? "switch.turn_off" : "switch.turn_on", e, "", ""});
+          d->state = k == LEFT ? "off" : "on";
+        } else {
+          move_device_(k);
+        }
         break;
       case 'c':
         if (k == UP) calls.push_back({"cover.open_cover", e, "", ""});
@@ -627,7 +686,10 @@ class Menu {
           break;
         }
         s.rows.push_back({"State", status_(*d)});
-        if (d->type == 'c') {
+        if (d->type == 's') {
+          s.rows.push_back({"OK", "on/off"});
+          s.rows.push_back({"< >", "off / on"});
+        } else if (d->type == 'c') {
           s.rows.push_back({"Up/Down", "open/close"});
           s.rows.push_back({"OK", "stop"});
         } else if (d->type == 'h') {

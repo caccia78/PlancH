@@ -37,10 +37,13 @@ and sends them to the panel.
 ## 3 · Choose the devices
 
 Create the label **PlancH** (**Settings → Areas, labels & zones → Labels**) and put it on the
-lights, covers and thermostats (climate) you want on the panel.
+lights, switches (smart plugs), covers and thermostats (climate) you want on the panel.
 
 - Put it on the **entity**, to choose exactly what appears; or on the **device**, to take all
-  its lights, covers and thermostats.
+  its lights, switches, covers and thermostats.
+- A lamp on a smart plug is often a `switch`: it appears under **Switches**. To have it under
+  **Lights**, turn it into a light with the Home Assistant helper *Change device type of a
+  switch* and label the new light instead.
 - The room is the area of the entity, or of its device. Without an area the device goes under
   **Other**.
 - The name shown is the entity name without the room in front ("Living room Lamp" →
@@ -51,15 +54,31 @@ package includes a small automation, **PlancH: refresh the menu when labels or a
 for that).
 
 !!! warning "Limits"
-    The panel shows at most **8 rooms**, **8 devices per room** and **32 devices** in total:
+    A panel shows at most **8 rooms**, **8 devices per room** and **32 devices** in total:
     more would not fit in the ESP32 memory nor on the 0.96" display. Beyond the limits the list
     is cut, the LED D1 turns amber and the room list reads "Rooms (limit!)".
+
+### More than one PlancH
+
+Each panel can show its own devices besides the shared ones:
+
+1. Give the panel a name: on its device page in Home Assistant, under **Configuration**, type
+   it in the **Panel** field (for example *Studio*). No new firmware needed.
+2. Create the label **PlancH Studio** and put it on the devices for that panel only.
+
+The panel named Studio shows the devices with **PlancH** and with **PlancH Studio**; a device
+can have several labels to appear on more than one panel. A panel without a name, or with a
+name that has no label, shows the **PlancH** devices. Names are not case sensitive, and up to
+6 named panels are supported.
 
 ## 4 · Assign the scene keys
 
 Create the labels **PlancH S1**, **PlancH S2**, **PlancH S3** and **PlancH S4** and put each
 one on the scene, script or automation for that key (one entity per label): a scene is turned
 on, a script is run, an automation is triggered. A key without a label does nothing.
+
+With more panels, **PlancH Studio S1** … **PlancH Studio S4** set the keys of the panel Studio
+only, and win over the shared ones.
 
 The LED next to each key shows the **active scene**: the one activated most recently among the
 four, also when you activate it from Home Assistant or from an automation (a script also while
