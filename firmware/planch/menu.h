@@ -6,6 +6,7 @@
 
 #include <ArduinoJson.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -21,11 +22,21 @@ struct Device {
   char type = 0;        // 'l' light, 'c' cover, 'h' climate (heating)
   float value = NAN;    // light brightness %, cover position %, climate target temperature
   float current = NAN;  // climate current temperature
+  // Lights: supported features ('b' brightness, 'c' colour, 't' white temperature, 'e' effects),
+  // current colour (hue, saturation), white temperature with its range, current effect
+  std::string modes, effect;
+  float hue = NAN, sat = NAN, kelvin = NAN, kmin = 2000, kmax = 6500;
 };
 
 struct Room {
   std::string name;
   std::vector<Device> devices;
+};
+
+// Colour of the palette defined in the Home Assistant package (hue 0-360, saturation 0-100)
+struct Colour {
+  std::string name;
+  float hue = 0, sat = 0;
 };
 
 struct Scene {
@@ -85,6 +96,17 @@ class Menu {
         dev.type = t[0];
         if (!d["v"].isNull()) dev.value = d["v"].as<float>();
         if (!d["c"].isNull()) dev.current = d["c"].as<float>();
+        dev.modes = d["m"] | "";
+        if (d["hs"].is<JsonArray>()) {
+          dev.hue = d["hs"][0].as<float>();
+          dev.sat = d["hs"][1].as<float>();
+        }
+        if (!d["k"].isNull()) dev.kelvin = d["k"].as<float>();
+        if (d["kr"].is<JsonArray>()) {
+          dev.kmin = d["kr"][0] | 2000.0f;
+          dev.kmax = d["kr"][1] | 6500.0f;
+        }
+        dev.effect = d["f"] | "";
         if (!dev.entity.empty() && dev.type) room.devices.push_back(dev);
       }
       if (!room.devices.empty()) rooms.push_back(room);
@@ -93,6 +115,20 @@ class Menu {
     rooms_ = rooms;
     valid_ = true;
     restore_selection_();
+  }
+
+  // {"p": [[name, hue, saturation], ...]}: the colours the Colour row steps through
+  void set_palette(const std::string &json) {
+    JsonDocument doc;
+    palette_.clear();
+    if (deserializeJson(doc, json_start_(json)) != DeserializationError::Ok) return;
+    for (JsonArray c : doc["p"].as<JsonArray>()) {
+      Colour col;
+      col.name = c[0] | "";
+      col.hue = c[1] | 0.0f;
+      col.sat = c[2] | 0.0f;
+      if (!col.name.empty()) palette_.push_back(col);
+    }
   }
 
   void set_scenes(const std::string &json) {
@@ -235,6 +271,8 @@ class Menu {
   };
 
   std::vector<Room> rooms_;
+  std::vector<Colour> palette_;
+  int row_ = 0;  // selected row in the screen of a light
   Scene scenes_[4];
   bool valid_ = false, warning_ = false, connected_ = false, screen_on_ = true;
   float backlight_[3] = {0, 0, 0}, status_leds_[2][3] = {{0, 0, 0}, {0, 0, 0}};
@@ -356,6 +394,7 @@ class Menu {
         if (d[i]->entity == sel_entity_) cursor_[DEVICES] = i;
     }
     if (rooms_.empty() || (level_ == CONTROL && device_() && device_()->entity != sel_entity_)) level_ = ROOMS;
+    if (const Device *d = device_()) row_ = std::max(0, std::min(row_, int(params_(*d).size()) - 1));
     remember_();
   }
 
@@ -381,6 +420,7 @@ class Menu {
           cursor_[DEVICES] = 0;
         } else if (level_ == DEVICES) {
           level_ = CONTROL;
+          row_ = 0;
         }
         break;
       case BACK:
@@ -403,16 +443,7 @@ class Menu {
     const std::string &e = d->entity;
     switch (d->type) {
       case 'l':
-        if (k == OK) {
-          calls.push_back({"light.toggle", e, "", ""});
-          d->state = d->state == "on" ? "off" : "on";  // optimistic, HA confirms
-        } else if (k == LEFT || k == RIGHT) {
-          calls.push_back({"light.turn_on", e, "brightness_step_pct", k == LEFT ? "-10" : "10"});
-          if (!std::isnan(d->value)) d->value = std::fmax(1, std::fmin(100, d->value + (k == LEFT ? -10 : 10)));
-          d->state = "on";
-        } else {
-          move_device_(k);
-        }
+        light_key_(*d, k, calls);
         break;
       case 'c':
         if (k == UP) calls.push_back({"cover.open_cover", e, "", ""});
@@ -428,6 +459,103 @@ class Menu {
         } else {
           move_device_(k);
         }
+        break;
+    }
+  }
+
+  // Rows of the screen of a light: 'b' brightness (or 's' just on/off), then colour, white
+  // temperature and effect when the light supports them
+  static std::vector<char> params_(const Device &d) {
+    if (d.type != 'l') return {};
+    std::vector<char> out{d.modes.find('b') != std::string::npos ? 'b' : 's'};
+    for (char m : {'c', 't', 'e'})
+      if (d.modes.find(m) != std::string::npos) out.push_back(m);
+    return out;
+  }
+
+  // Palette colour closest to the current colour of the light (-1 if unknown)
+  int nearest_colour_(const Device &d) const {
+    if (palette_.empty() || std::isnan(d.hue) || std::isnan(d.sat)) return -1;
+    auto xy = [](float h, float s, float &x, float &y) {
+      x = s * std::cos(h * 3.14159265f / 180);
+      y = s * std::sin(h * 3.14159265f / 180);
+    };
+    float x, y;
+    xy(d.hue, d.sat, x, y);
+    int best = 0;
+    float dist = 1e9;
+    for (size_t i = 0; i < palette_.size(); i++) {
+      float px, py;
+      xy(palette_[i].hue, palette_[i].sat, px, py);
+      float dd = (px - x) * (px - x) + (py - y) * (py - y);
+      if (dd < dist) dist = dd, best = i;
+    }
+    return best;
+  }
+
+  // Light: Up/Down through the rows and on to the previous/next light (continuous scrolling),
+  // Left/Right change the selected row, OK on/off
+  void light_key_(Device &d, Key k, std::vector<Call> &calls) {
+    const std::string &e = d.entity;
+    auto rows = params_(d);
+    row_ = std::max(0, std::min(row_, int(rows.size()) - 1));
+    if (k == OK) {
+      calls.push_back({"light.toggle", e, "", ""});
+      d.state = d.state == "on" ? "off" : "on";  // optimistic, HA confirms
+      return;
+    }
+    if (k == DOWN) {
+      if (row_ < int(rows.size()) - 1) {
+        row_++;
+      } else {
+        move_device_(DOWN);
+        row_ = 0;
+      }
+      return;
+    }
+    if (k == UP) {
+      if (row_ > 0) {
+        row_--;
+      } else {
+        move_device_(UP);
+        const Device *p = device_();
+        row_ = p ? int(params_(*p).size()) - 1 : 0;
+      }
+      return;
+    }
+    if (k != LEFT && k != RIGHT) return;
+    int dir = k == LEFT ? -1 : 1;
+    switch (rows[row_]) {
+      case 's':
+        calls.push_back({dir > 0 ? "light.turn_on" : "light.turn_off", e, "", ""});
+        d.state = dir > 0 ? "on" : "off";
+        break;
+      case 'b':
+        calls.push_back({"light.turn_on", e, "brightness_step_pct", dir < 0 ? "-10" : "10"});
+        if (!std::isnan(d.value)) d.value = std::fmax(1, std::fmin(100, d.value + 10 * dir));
+        d.state = "on";
+        break;
+      case 'c': {
+        if (palette_.empty()) break;
+        int n = palette_.size(), i = nearest_colour_(d);
+        i = i < 0 ? (dir > 0 ? 0 : n - 1) : (i + dir + n) % n;
+        calls.push_back({"light.turn_on", e, "hs_color", fmt_(palette_[i].hue, "%.0f") + "," + fmt_(palette_[i].sat, "%.0f")});
+        d.hue = palette_[i].hue;
+        d.sat = palette_[i].sat;
+        d.state = "on";
+        break;
+      }
+      case 't': {
+        float kv = std::isnan(d.kelvin) ? 2700 : d.kelvin;
+        kv = std::fmax(d.kmin, std::fmin(d.kmax, kv + 500 * dir));
+        calls.push_back({"light.turn_on", e, "color_temp_kelvin", fmt_(kv, "%.0f")});
+        d.kelvin = kv;
+        d.state = "on";
+        break;
+      }
+      case 'e':
+        calls.push_back({"light.turn_on", e, "effect_step", dir < 0 ? "-1" : "1"});   // HA picks the effect
+        d.state = "on";
         break;
     }
   }
@@ -484,11 +612,22 @@ class Menu {
         const Device *d = device_();
         if (!d) break;
         s.title = d->name;
-        s.rows.push_back({"State", status_(*d)});
         if (d->type == 'l') {
-          s.rows.push_back({"OK", "on/off"});
-          s.rows.push_back({"< >", "brightness"});
-        } else if (d->type == 'c') {
+          for (char p : params_(*d)) {
+            if (p == 'b') s.rows.push_back({"Brightness", status_(*d)});
+            if (p == 's') s.rows.push_back({"State", status_(*d)});
+            if (p == 'c') {
+              int i = nearest_colour_(*d);
+              s.rows.push_back({"Colour", i < 0 ? "-" : palette_[i].name});
+            }
+            if (p == 't') s.rows.push_back({"White", std::isnan(d->kelvin) ? "-" : fmt_(d->kelvin, "%.0fK")});
+            if (p == 'e') s.rows.push_back({"Effect", d->effect.empty() ? "none" : d->effect.substr(0, 11)});
+          }
+          page_(s, row_, s.rows.size());
+          break;
+        }
+        s.rows.push_back({"State", status_(*d)});
+        if (d->type == 'c') {
           s.rows.push_back({"Up/Down", "open/close"});
           s.rows.push_back({"OK", "stop"});
         } else if (d->type == 'h') {

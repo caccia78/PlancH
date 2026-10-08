@@ -27,3 +27,10 @@ the back of the board.
 - Wi-Fi set after flashing (web.esphome.io or the board's hotspot): no password in the files.
 - Assembly test firmware `planch-bringup.yaml` (buttons, touch, display, LED groups) and a test
   bench `planch-test.yaml` that runs the menu on any ESP32 board.
+- Colour lights: rows Brightness, Colour (palette editable in the package), White and Effect on the
+  screen of a light; Up/Down scroll through the rows and on to the next light.
+- The menu follows label and area changes by itself (automation in the package).
+- Install from the browser: the Firmware page installs PlancH on its ESP32-S3; a separate page,
+  "Try it without the hardware", installs the test bench on a classic ESP32.
+- Home Assistant card `planch-card`: the panel drawn on its picture, with display, LEDs,
+  backlight glow and keys to tap.

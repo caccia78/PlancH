@@ -35,6 +35,14 @@ text_sensor:
     internal: true
     on_value:
       - lambda: planch::menu().set_menu(x);
+  # Colours of the Colour row of a light (palette defined in the package)
+  - platform: homeassistant
+    id: ha_palette
+    entity_id: sensor.planch_menu
+    attribute: palette
+    internal: true
+    on_value:
+      - lambda: planch::menu().set_palette(x);
   # Entities assigned to the scene keys with the labels "PlancH S1" ... "PlancH S4"
   - platform: homeassistant
     id: ha_scenes
@@ -45,7 +53,10 @@ text_sensor:
       - lambda: planch::menu().set_scenes(x);
 
 script:
-  # Key pressed: code = planch::Key (UP, DOWN, LEFT, RIGHT, OK, BACK, S1..S4, TOUCH)
+  # Key pressed: code = planch::Key (UP, DOWN, LEFT, RIGHT, OK, BACK, S1..S4, TOUCH).
+  # Each Home Assistant action goes to the script for its extra field (the data keys of an action
+  # cannot be computed); every script reports the outcome to the model: scene LED green or red,
+  # D1 red for a menu action that failed.
   - id: planch_key
     mode: queued
     max_runs: 10
@@ -55,63 +66,154 @@ script:
       - lambda: |-
           for (auto &c : planch::menu().key(static_cast<planch::Key>(code), millis())) {
             ESP_LOGI("planch", "%s %s %s %s", c.action.c_str(), c.entity.c_str(), c.field.c_str(), c.value.c_str());
-            id(planch_call)->execute(c.action, c.entity, c.field, c.value, c.scene);
+            if (c.field == "brightness_step_pct") id(planch_call_brightness)->execute(c.action, c.entity, c.value, c.scene);
+            else if (c.field == "temperature") id(planch_call_temperature)->execute(c.action, c.entity, c.value, c.scene);
+            else if (c.field == "color_temp_kelvin") id(planch_call_kelvin)->execute(c.action, c.entity, c.value, c.scene);
+            else if (c.field == "hs_color") id(planch_call_hs)->execute(c.action, c.entity, c.value, c.scene);
+            else if (c.field == "effect_step") id(planch_call_effect)->execute(c.action, c.entity, c.value, c.scene);
+            else id(planch_call)->execute(c.action, c.entity, c.value, c.scene);
           }
 
-  # Home Assistant action; the data keys cannot be computed, so one branch per extra field.
-  # The outcome goes back to the model: scene LED green or red, D1 red for menu actions.
+  # Only entity_id
   - id: planch_call
     mode: queued
     max_runs: 10
     parameters:
       action_name: string
       entity: string
-      field: string
       value: string
       scene: int
     then:
-      - if:
-          condition:
-            lambda: return field == "brightness_step_pct";
-          then:
-            - homeassistant.action:
-                action: !lambda return action_name;
-                data:
-                  entity_id: !lambda return entity;
-                  brightness_step_pct: !lambda return value;
-                on_success:
-                  - lambda: planch::menu().result(scene, true, millis());
-                on_error:
-                  - lambda: |-
-                      ESP_LOGW("planch", "%s %s: %s", action_name.c_str(), entity.c_str(), error.c_str());
-                      planch::menu().result(scene, false, millis());
-          else:
-            - if:
-                condition:
-                  lambda: return field == "temperature";
-                then:
-                  - homeassistant.action:
-                      action: !lambda return action_name;
-                      data:
-                        entity_id: !lambda return entity;
-                        temperature: !lambda return value;
-                      on_success:
-                        - lambda: planch::menu().result(scene, true, millis());
-                      on_error:
-                        - lambda: |-
-                            ESP_LOGW("planch", "%s %s: %s", action_name.c_str(), entity.c_str(), error.c_str());
-                            planch::menu().result(scene, false, millis());
-                else:
-                  - homeassistant.action:
-                      action: !lambda return action_name;
-                      data:
-                        entity_id: !lambda return entity;
-                      on_success:
-                        - lambda: planch::menu().result(scene, true, millis());
-                      on_error:
-                        - lambda: |-
-                            ESP_LOGW("planch", "%s %s: %s", action_name.c_str(), entity.c_str(), error.c_str());
-                            planch::menu().result(scene, false, millis());
+      - homeassistant.action:
+          action: !lambda return action_name;
+          data:
+            entity_id: !lambda return entity;
+          on_success:
+            - lambda: planch::menu().result(scene, true, millis());
+          on_error:
+            - lambda: |-
+                ESP_LOGW("planch", "%s %s: %s", action_name.c_str(), entity.c_str(), error.c_str());
+                planch::menu().result(scene, false, millis());
+
+  # Light brightness, value = step in % ("10", "-10")
+  - id: planch_call_brightness
+    mode: queued
+    max_runs: 10
+    parameters:
+      action_name: string
+      entity: string
+      value: string
+      scene: int
+    then:
+      - homeassistant.action:
+          action: !lambda return action_name;
+          data:
+            entity_id: !lambda return entity;
+            brightness_step_pct: !lambda return value;
+          on_success:
+            - lambda: planch::menu().result(scene, true, millis());
+          on_error:
+            - lambda: |-
+                ESP_LOGW("planch", "%s %s: %s", action_name.c_str(), entity.c_str(), error.c_str());
+                planch::menu().result(scene, false, millis());
+
+  # Thermostat target temperature
+  - id: planch_call_temperature
+    mode: queued
+    max_runs: 10
+    parameters:
+      action_name: string
+      entity: string
+      value: string
+      scene: int
+    then:
+      - homeassistant.action:
+          action: !lambda return action_name;
+          data:
+            entity_id: !lambda return entity;
+            temperature: !lambda return value;
+          on_success:
+            - lambda: planch::menu().result(scene, true, millis());
+          on_error:
+            - lambda: |-
+                ESP_LOGW("planch", "%s %s: %s", action_name.c_str(), entity.c_str(), error.c_str());
+                planch::menu().result(scene, false, millis());
+
+  # Light white temperature in kelvin
+  - id: planch_call_kelvin
+    mode: queued
+    max_runs: 10
+    parameters:
+      action_name: string
+      entity: string
+      value: string
+      scene: int
+    then:
+      - homeassistant.action:
+          action: !lambda return action_name;
+          data:
+            entity_id: !lambda return entity;
+            color_temp_kelvin: !lambda return value;
+          on_success:
+            - lambda: planch::menu().result(scene, true, millis());
+          on_error:
+            - lambda: |-
+                ESP_LOGW("planch", "%s %s: %s", action_name.c_str(), entity.c_str(), error.c_str());
+                planch::menu().result(scene, false, millis());
+
+  # Light colour from the palette, value = "hue,saturation" (a list for HA)
+  - id: planch_call_hs
+    mode: queued
+    max_runs: 10
+    parameters:
+      action_name: string
+      entity: string
+      value: string
+      scene: int
+    then:
+      - homeassistant.action:
+          action: !lambda return action_name;
+          data:
+            entity_id: !lambda return entity;
+          data_template:
+            hs_color: "{{ [h | float, s | float] }}"
+          variables:
+            h: !lambda return value.substr(0, value.find(','));
+            s: !lambda return value.substr(value.find(',') + 1);
+          on_success:
+            - lambda: planch::menu().result(scene, true, millis());
+          on_error:
+            - lambda: |-
+                ESP_LOGW("planch", "%s %s: %s", action_name.c_str(), entity.c_str(), error.c_str());
+                planch::menu().result(scene, false, millis());
+
+  # Next or previous effect of the light, value = "1" or "-1": HA reads the list
+  - id: planch_call_effect
+    mode: queued
+    max_runs: 10
+    parameters:
+      action_name: string
+      entity: string
+      value: string
+      scene: int
+    then:
+      - homeassistant.action:
+          action: !lambda return action_name;
+          data:
+            entity_id: !lambda return entity;
+          data_template:
+            effect: >-
+              {% set l = state_attr(light, 'effect_list') or [] %}{% set c = state_attr(light, 'effect') %}
+              {{ l[((l.index(c) if c in l else -1) + step | int) % (l | count)] if l else '' }}
+          variables:
+            light: !lambda return entity;
+            step: !lambda return value;
+          on_success:
+            - lambda: planch::menu().result(scene, true, millis());
+          on_error:
+            - lambda: |-
+                ESP_LOGW("planch", "%s %s: %s", action_name.c_str(), entity.c_str(), error.c_str());
+                planch::menu().result(scene, false, millis());
 
 interval:
   - interval: 1s

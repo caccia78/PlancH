@@ -42,7 +42,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: firmware-build
-          key: firmware-${{ env.ESPHOME_VERSION }}-${{ hashFiles('firmware/**') }}
+          key: firmware-${{ env.ESPHOME_VERSION }}-${{ hashFiles('firmware/**', '.github/workflows/docs.yml') }}
       - name: Build PlancH (ESP32-S3)
         id: board
         if: steps.firmware-cache.outputs.cache-hit != 'true'
@@ -71,22 +71,23 @@ jobs:
           done
           python3 - <<'EOF'
           import json, os
-          builds = []
-          for d in (os.environ["BOARD"], os.environ["BENCH"]):
+          # Two installers: the board (ESP32-S3) on the Firmware page, the test bench (classic
+          # ESP32) on its own page, so that nobody gets the test bench by mistake
+          for d, nome, uscita in ((os.environ["BOARD"], "PlancH", "manifest.json"),
+                                  (os.environ["BENCH"], "PlancH test bench", "manifest-test.json")):
               part = json.load(open(f"firmware-build/{d}/manifest.json"))
               for p in part["parts"]:
                   p["path"] = f"{d}/{p['path']}"
               part.pop("ota", None)   # only the factory image is published
-              builds.append(part)
-          manifest = {
-              "name": "PlancH",
-              "version": os.environ.get("VERSION") or "dev",
-              "home_assistant_domain": "esphome",
-              "new_install_prompt_erase": True,
-              "builds": builds,
-          }
-          json.dump(manifest, open("firmware-build/manifest.json", "w"), indent=2)
-          print(json.dumps(manifest, indent=2))
+              manifest = {
+                  "name": nome,
+                  "version": os.environ.get("VERSION") or "dev",
+                  "home_assistant_domain": "esphome",
+                  "new_install_prompt_erase": True,
+                  "builds": [part],
+              }
+              json.dump(manifest, open(f"firmware-build/{uscita}", "w"), indent=2)
+              print(uscita, json.dumps(manifest, indent=2))
           EOF
 
       # Website

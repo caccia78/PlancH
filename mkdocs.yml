@@ -94,7 +94,9 @@ nav:
       - accessories/index.md
       - Desk stand: accessories/desk-stand.md
       - Wall mount: accessories/wall-mount.md
-  - Firmware: firmware/index.md
+  - Firmware:
+      - firmware/index.md
+      - Try it without the hardware: firmware/test-bench.md
   - Home Assistant: home-assistant/index.md
   - About:
       - License: about/license.md

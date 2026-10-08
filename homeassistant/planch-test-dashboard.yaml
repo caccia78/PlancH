@@ -3,14 +3,37 @@
 # menu (three dots) > Edit dashboard > menu > Raw configuration editor, paste this file and save.
 # The entity IDs assume the device name "planch-test" (friendly name "PlancH test").
 #
-# LEDs: true hue at full brightness (the real levels are low on purpose and would look black);
-# small dot = dim, large dot = full brightness, empty circle = off.
+# First view: the PlancH card, the panel drawn on its picture with display, LEDs and keys.
+# It needs the folder homeassistant/www/planch/ copied to /config/www/planch/ and the resource
+# /local/planch/planch-card.js?v=1.1 (JavaScript module) in Settings > Dashboards > Resources;
+# change the ?v= number after every update of the card, browsers keep the old one in cache.
+# Second view: the same data as text, without the card.
+#
+# LEDs in the text view: true hue at full brightness (the real levels are low on purpose and
+# would look black); small dot = dim, large dot = full brightness, empty circle = off.
 
 title: PlancH test bench
 views:
-  - title: PlancH
-    path: planch
+  - title: Panel
+    path: panel
     icon: mdi:gesture-tap-button
+    cards:
+      - type: custom:planch-card
+        device: planch_test
+      - type: entities
+        entities:
+          - entity: sensor.planch_menu
+            name: Labelled devices
+          - entity: light.planch_test_status_led_2
+            name: Status LED 2
+          - entity: light.planch_test_status_led_3
+            name: Status LED 3
+          - entity: light.planch_test_backlight
+            name: Backlight
+
+  - title: Text
+    path: text
+    icon: mdi:text-box-outline
     cards:
       - type: vertical-stack
         cards:

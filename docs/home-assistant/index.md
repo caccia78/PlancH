@@ -46,8 +46,9 @@ lights, covers and thermostats (climate) you want on the panel.
 - The name shown is the entity name without the room in front ("Living room Lamp" →
   "Lamp"), cut to 16 characters.
 
-The menu updates by itself when a state changes. After adding labels or changing areas, toggle
-one of the listed devices (or reload the template entities) to refresh it.
+The menu updates by itself: states live, and labels or areas within a couple of seconds (the
+package includes a small automation, **PlancH: refresh the menu when labels or areas change**,
+for that).
 
 !!! warning "Limits"
     The panel shows at most **8 rooms**, **8 devices per room** and **32 devices** in total:
@@ -63,6 +64,26 @@ on, a script is run, an automation is triggered. A key without a label does noth
 The LED next to each key shows the **active scene**: the one activated most recently among the
 four, also when you activate it from Home Assistant or from an automation (a script also while
 it runs). When you press a key, its LED turns green if Home Assistant confirms, red on error.
+
+## Colours
+
+On a colour light the panel steps through a **palette**, defined at the top of the `palette`
+attribute in `planch.yaml`. Edit it as you like: name (up to 10 characters), hue (0–360) and
+saturation (0–100).
+
+{% raw %}
+```yaml
+{%- set palette = [
+  ['White', 0, 0], ['Warm white', 35, 45], ['Orange', 30, 100], ['Red', 0, 100],
+  ['Pink', 330, 65], ['Violet', 275, 80], ['Blue', 225, 100], ['Cyan', 185, 90],
+  ['Green', 120, 90], ['Yellow', 55, 90]] %}
+```
+{% endraw %}
+
+The favourite colours that Home Assistant shows in the light dialog are stored where templates
+cannot read them, so the panel uses this list instead. Lights with a white temperature get a
+**White** row, lights with effects (WLED and many others) an **Effect** row: see the
+[Firmware](../firmware/index.md#keys-and-display) page.
 
 ## Example: a status LED for the front door
 

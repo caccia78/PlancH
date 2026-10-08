@@ -9,7 +9,7 @@ by room and by type. See [Home Assistant](../home-assistant/index.md) for the se
 | [`firmware/planch.yaml`](https://github.com/caccia78/PlancH/blob/main/firmware/planch.yaml) | **The firmware**: menu on the display, keys, LEDs |
 | [`firmware/planch/`](https://github.com/caccia78/PlancH/tree/main/firmware/planch) | Shared logic (`core.yaml`, `menu.h`): keep it next to `planch.yaml` |
 | [`firmware/planch-bringup.yaml`](https://github.com/caccia78/PlancH/blob/main/firmware/planch-bringup.yaml) | Assembly test: buttons and LED groups on a web page, see the [assembly guide](../build/assembly.md) |
-| [`firmware/planch-test.yaml`](https://github.com/caccia78/PlancH/blob/main/firmware/planch-test.yaml) | Test bench on any ESP32 board, without the PlancH hardware |
+| [`firmware/planch-test.yaml`](https://github.com/caccia78/PlancH/blob/main/firmware/planch-test.yaml) | Test bench on any ESP32 board, without the PlancH hardware: see [Try it without the hardware](test-bench.md) |
 
 ## Install from the browser
 
@@ -33,8 +33,8 @@ written by the browser (Chrome or Edge on a computer).
    the board, not in any file.
 5. Add the board to Home Assistant as described in [Home Assistant](../home-assistant/index.md).
 
-The installer picks the firmware from the chip it finds: on an ESP32-S3 it installs PlancH, on a
-classic ESP32 it installs the [test bench](#test-bench-without-the-hardware).
+This button installs PlancH on its ESP32-S3-Zero. To try the menu on a spare ESP32 board before
+building PlancH, see [Try it without the hardware](test-bench.md).
 
 ## Flash with ESPHome
 
@@ -72,11 +72,30 @@ the controls of one device.
 
 | Key | In the lists | On a device |
 | --- | --- | --- |
-| Up, Down | Move | Light, thermostat: previous / next device. Cover: open / close |
-| OK, Right | Enter | Light, thermostat: on / off. Cover: stop. Right on a light: brighter; on a thermostat: +0.5 °C |
-| Back, Left | Go back | Back: go back. Left on a light: dimmer; on a thermostat: −0.5 °C |
+| Up, Down | Move | Light: move through its rows, and past the last row on to the next light. Thermostat: previous / next. Cover: open / close |
+| OK | Enter | Light, thermostat: on / off. Cover: stop |
+| Left, Right | Back / enter | Light: change the selected row. Thermostat: −/+ 0.5 °C |
+| Back | Go back | Go back to the list |
 | Scene 1–4 | Run the scene, script or automation assigned in Home Assistant | Same |
 | Touch | Wake the display | Wake the display |
+
+The screen of a light shows only the rows that the light supports:
+
+```
+Strip
+> Brightness      70%
+  Colour          Red
+  White         2700K
+  Effect       Candle
+```
+
+- **Brightness**: ±10% (a light that can only switch on and off has a **State** row instead).
+- **Colour**: previous / next colour of the palette defined in the
+  [Home Assistant package](../home-assistant/index.md#colours); the row shows the palette colour
+  closest to the current one.
+- **White**: warmer / cooler in steps of 500 K, within the range of the light.
+- **Effect**: previous / next effect of the light (WLED and many others), picked by Home
+  Assistant from the light's own list.
 
 The display switches off after 30 seconds without keys; the first key only wakes it up. The
 scene keys work with the display off too.
@@ -112,13 +131,8 @@ default in `planch.yaml`) the ESPHome log prints the raw touch value:
 
 ## Test bench without the hardware
 
-[`firmware/planch-test.yaml`](https://github.com/caccia78/PlancH/blob/main/firmware/planch-test.yaml)
-runs the same menu on any ESP32 board (it was developed on an ESP-WROOM-32) with nothing
-connected. The keys are buttons in Home Assistant; what the display and the LEDs would show is
-published as two text sensors, **Screen** and **LEDs**. The dashboard
-[`homeassistant/planch-test-dashboard.yaml`](https://github.com/caccia78/PlancH/blob/main/homeassistant/planch-test-dashboard.yaml)
-draws the panel: display, LEDs as coloured dots and keys laid out as on the board. Useful to try
-the menu with your devices before building the board.
+The same menu runs on any ESP32 board with nothing connected, driven from a Home Assistant card
+that draws PlancH: see [Try it without the hardware](test-bench.md).
 
 ## Pinout
 

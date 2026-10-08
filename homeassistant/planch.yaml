@@ -15,10 +15,33 @@
 #
 # Limits (memory of the ESP32 and size of the OLED): 8 rooms, 8 devices per room, 32 devices in
 # total, names shown up to 16 characters. Beyond the limits the list is cut and the panel shows
-# "limit!". Areas and labels are read again at the next state change of a listed device.
+# "limit!". When labels or areas change, the automation below refreshes the menu within a
+# couple of seconds; states are always followed live.
 #
 # The attributes start with "planch1:" (format version): it keeps them plain strings in Home
 # Assistant, the panel reads the JSON after it.
+
+# Templates follow the states of the entities they read, but are not told when labels or areas
+# change: this automation refreshes the menu after any change to entities, devices, areas or
+# labels (the delay groups the bursts of events of a single edit).
+automation:
+  - id: planch_menu_refresh
+    alias: "PlancH: refresh the menu when labels or areas change"
+    mode: restart
+    triggers:
+      - trigger: event
+        event_type: entity_registry_updated
+      - trigger: event
+        event_type: device_registry_updated
+      - trigger: event
+        event_type: area_registry_updated
+      - trigger: event
+        event_type: label_registry_updated
+    actions:
+      - delay: 2
+      - action: homeassistant.update_entity
+        target:
+          entity_id: sensor.planch_menu
 
 template:
   - sensor:
@@ -32,7 +55,9 @@ template:
           {{ ns.ids | unique | select('match', '(light|cover|climate)\.') | list | count }}
         attributes:
           # {"r": [{"n": room, "d": [{"e": entity, "n": name, "t": l|c|h, "s": state,
-          #   "v": brightness % | position % | target temperature, "c": current temperature}]}],
+          #   "v": brightness % | position % | target temperature, "c": current temperature,
+          #   lights only: "m": features (b brightness, c colour, t white, e effects),
+          #   "hs": [hue, saturation], "k": white kelvin, "kr": [min, max], "f": effect}]}],
           #  "w": 1 if the limits cut the list}
           menu: >-
             {%- set max_rooms, max_per_room, max_total = 8, 8, 32 %}
@@ -54,7 +79,18 @@ template:
                 {%- set s = states(e) %}
                 {%- if kind == 'light' %}
                   {%- set b = state_attr(e, 'brightness') %}
-                  {%- set item = {'e': e, 'n': name[:16], 't': 'l', 's': s, 'v': (b / 2.55) | round(0) | int if b is number else none} %}
+                  {%- set cm = state_attr(e, 'supported_color_modes') or [] %}
+                  {%- set fx = state_attr(e, 'effect_list') or [] %}
+                  {%- set m = ('b' if cm | reject('eq', 'onoff') | list | count > 0 else '')
+                            ~ ('c' if cm | select('in', ['hs', 'xy', 'rgb', 'rgbw', 'rgbww']) | list | count > 0 else '')
+                            ~ ('t' if 'color_temp' in cm else '') ~ ('e' if fx | count > 0 else '') %}
+                  {%- set hs = state_attr(e, 'hs_color') %}
+                  {%- set item = {'e': e, 'n': name[:16], 't': 'l', 's': s, 'v': (b / 2.55) | round(0) | int if b is number else none,
+                                  'm': m,
+                                  'hs': [hs[0] | round(0) | int, hs[1] | round(0) | int] if hs and 'c' in m else none,
+                                  'k': state_attr(e, 'color_temp_kelvin') if 't' in m else none,
+                                  'kr': [state_attr(e, 'min_color_temp_kelvin'), state_attr(e, 'max_color_temp_kelvin')] if 't' in m else none,
+                                  'f': (state_attr(e, 'effect') or '')[:11] if 'e' in m else none} %}
                 {%- elif kind == 'cover' %}
                   {%- set pos = state_attr(e, 'current_position') %}
                   {%- set item = {'e': e, 'n': name[:16], 't': 'c', 's': s, 'v': pos if pos is number else none} %}
@@ -72,6 +108,14 @@ template:
               {%- endif %}
             {%- endfor %}
             {{ 'planch1:' ~ ({'r': ns.rooms, 'w': 1 if ns.cut else 0} | to_json) }}
+          # Colours of the Colour row on the panel, in this order: [name, hue 0-360, saturation 0-100].
+          # Change them as you like (names up to 10 characters).
+          palette: >-
+            {%- set palette = [
+              ['White', 0, 0], ['Warm white', 35, 45], ['Orange', 30, 100], ['Red', 0, 100],
+              ['Pink', 330, 65], ['Violet', 275, 80], ['Blue', 225, 100], ['Cyan', 185, 90],
+              ['Green', 120, 90], ['Yellow', 55, 90]] %}
+            {{ 'planch1:' ~ ({'p': palette} | to_json) }}
           # {"1": {"e": entity, "n": name, "a": 1 if active}, ... "4": ...} from the labels
           # "PlancH S1" ... "PlancH S4". Active: the most recently activated of the four (scene and
           # button: state; script and automation: last_triggered), and a script while it runs.
