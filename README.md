@@ -7,7 +7,7 @@ rubber feet or on a 3D-printed stand. Powered by a Waveshare ESP32-S3-Zero runni
 
 **📖 Documentation: [caccia78.github.io/PlancH](https://caccia78.github.io/PlancH/)**
 
-https://github.com/user-attachments/assets/00802e42-387a-4095-9ca5-fa8b80f6d39a
+https://github.com/user-attachments/assets/e7710835-a2c8-45fb-a4f4-b32c819555f0
 
 *The video is also in [`media/`](media/) (MP4 and WebM).*
 
