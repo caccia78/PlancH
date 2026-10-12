@@ -1,0 +1,13 @@
+# PlancH - the test bench as a remote package, for the test bench adopted in the ESPHome Device
+# Builder (dashboard_import in planch-test.yaml). See import.yaml.
+
+packages:
+  board: !include test-bench.yaml
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/caccia78/PlancH
+      ref: main
+      path: firmware/components
+    components: [planch]

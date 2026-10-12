@@ -1,136 +1,18 @@
-# PlancH - ESPHome firmware for the board (Waveshare ESP32-S3-Zero).
-# Menu built automatically by Home Assistant from the devices with the label "PlancH": logic in
-# planch/core.yaml and planch/menu.h, Home Assistant package in homeassistant/planch.yaml.
+# PlancH - ESPHome firmware for the board (Waveshare ESP32-S3-Zero), from the local files.
+# Menu built automatically by Home Assistant from the devices with the label "PlancH": board in
+# planch/board.yaml, logic in planch/core.yaml and components/planch/, Home Assistant package in
+# homeassistant/planch.yaml.
 # Wi-Fi is set after flashing: from web.esphome.io ("Configure Wi-Fi", Improv serial) or from the
 # "PlancH" hotspot that the board opens while it has no network.
 
-substitutions:
-  led_pin: GPIO10
-
-esphome:
-  name: planch
-  friendly_name: PlancH
-  name_add_mac_suffix: true   # every panel gets its own name (planch-xxxxxx)
-  project:
-    name: "caccia78.planch"
-    version: "1.0.0"
-
-esp32:
-  board: esp32-s3-devkitc-1
-  framework:
-    type: esp-idf
-
-logger:
-  hardware_uart: USB_SERIAL_JTAG   # frees TX/RX (Back button on GPIO 44)
-
-ota:
-  - platform: esphome
-wifi:
-  ap:
-    ssid: "PlancH"
-captive_portal:
-improv_serial:
-
 packages:
-  core: !include planch/core.yaml
+  board: !include planch/board.yaml
 
-i2c:
-  sda: GPIO11
-  scl: GPIO12
-  frequency: 400kHz
+external_components:
+  - source: components
+    components: [planch]
 
-font:
-  - file: "gfonts://Roboto"
-    id: font_small
-    size: 10
-  - file: "gfonts://Roboto@500"
-    id: font_title
-    size: 10
-
-# Title on the first row, then up to 4 rows: name on the left, state on the right,
-# the selected row inverted
-display:
-  - platform: ssd1306_i2c
-    model: "SSD1306 128x64"
-    address: 0x3C
-    id: oled
-    update_interval: 100ms
-    lambda: |-
-      auto &m = planch::menu();
-      if (!m.screen_on()) return;
-      it.print(0, 0, id(font_title), m.title().c_str());
-      it.line(0, 12, 127, 12);
-      auto rows = m.rows();
-      for (int i = 0; i < (int) rows.size(); i++) {
-        int y = 14 + i * 12;
-        bool sel = i == m.selected();
-        if (sel) it.filled_rectangle(0, y, 128, 12);
-        auto colour = sel ? COLOR_OFF : COLOR_ON;
-        it.print(2, y, id(font_small), colour, rows[i].left.c_str());
-        it.print(126, y, id(font_small), colour, TextAlign::TOP_RIGHT, rows[i].right.c_str());
-      }
-
-esp32_touch:
-  setup_mode: true   # logs raw values to calibrate the threshold
-
-# Keys to GND with internal pull-up; codes as planch::Key
-binary_sensor:
-  - platform: esp32_touch
-    name: "Touch"
-    pin: GPIO13
-    threshold: 1000   # provisional value, calibrate after assembly
-    on_press: [script.execute: { id: planch_key, code: 10 }]
-  - platform: gpio
-    name: "Up"
-    pin: { number: GPIO1, inverted: true, mode: { input: true, pullup: true } }
-    filters: [delayed_on: 10ms]
-    on_press: [script.execute: { id: planch_key, code: 0 }]
-  - platform: gpio
-    name: "Down"
-    pin: { number: GPIO2, inverted: true, mode: { input: true, pullup: true } }
-    filters: [delayed_on: 10ms]
-    on_press: [script.execute: { id: planch_key, code: 1 }]
-  - platform: gpio
-    name: "Left"
-    pin:
-      number: GPIO3        # strapping pin: used as input only
-      inverted: true
-      mode: { input: true, pullup: true }
-      ignore_strapping_warning: true
-    filters: [delayed_on: 10ms]
-    on_press: [script.execute: { id: planch_key, code: 2 }]
-  - platform: gpio
-    name: "Right"
-    pin: { number: GPIO4, inverted: true, mode: { input: true, pullup: true } }
-    filters: [delayed_on: 10ms]
-    on_press: [script.execute: { id: planch_key, code: 3 }]
-  - platform: gpio
-    name: "OK"
-    pin: { number: GPIO5, inverted: true, mode: { input: true, pullup: true } }
-    filters: [delayed_on: 10ms]
-    on_press: [script.execute: { id: planch_key, code: 4 }]
-  - platform: gpio
-    name: "Back"
-    pin: { number: GPIO44, inverted: true, mode: { input: true, pullup: true } }
-    filters: [delayed_on: 10ms]
-    on_press: [script.execute: { id: planch_key, code: 5 }]
-  - platform: gpio
-    name: "Scene 1"
-    pin: { number: GPIO9, inverted: true, mode: { input: true, pullup: true } }
-    filters: [delayed_on: 10ms]
-    on_press: [script.execute: { id: planch_key, code: 6 }]
-  - platform: gpio
-    name: "Scene 2"
-    pin: { number: GPIO8, inverted: true, mode: { input: true, pullup: true } }
-    filters: [delayed_on: 10ms]
-    on_press: [script.execute: { id: planch_key, code: 7 }]
-  - platform: gpio
-    name: "Scene 3"
-    pin: { number: GPIO7, inverted: true, mode: { input: true, pullup: true } }
-    filters: [delayed_on: 10ms]
-    on_press: [script.execute: { id: planch_key, code: 8 }]
-  - platform: gpio
-    name: "Scene 4"
-    pin: { number: GPIO6, inverted: true, mode: { input: true, pullup: true } }
-    filters: [delayed_on: 10ms]
-    on_press: [script.execute: { id: planch_key, code: 9 }]
+# Once in Home Assistant the panel can be adopted in the ESPHome Device Builder: its configuration
+# then imports planch/import.yaml from GitHub, so it needs no copy of these files
+dashboard_import:
+  package_import_url: github://caccia78/PlancH/firmware/planch/import.yaml@main

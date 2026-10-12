@@ -39,3 +39,10 @@ the back of the board.
   "Try it without the hardware", installs the test bench on a classic ESP32.
 - Home Assistant card `planch-card`: the panel drawn on its picture, with display, LEDs,
   backlight glow and keys to tap.
+- Adoption in the ESPHome Device Builder: a panel (or the test bench) installed from the browser
+  can be adopted and then updated over Wi-Fi, loading the firmware from this repository. The menu
+  model is now an ESPHome external component (`firmware/components/planch/`).
+
+### Documentation
+
+- Usage examples: office, bedside, kitchen timer on the backlight, indicators on the status LEDs.

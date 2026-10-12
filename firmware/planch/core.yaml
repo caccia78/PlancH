@@ -1,6 +1,9 @@
-# PlancH - firmware core (package planch/core.yaml), shared by the real board (planch.yaml) and the test bench (planch-test.yaml).
+# PlancH - firmware core (package planch/core.yaml), shared by the real board (planch/board.yaml) and
+# the test bench (planch/test-bench.yaml).
 # The board files define the keys (they call the script planch_key) and the screen; this package
-# reads the menu from Home Assistant, performs the actions and drives the 13 LEDs.
+# reads the menu from Home Assistant, performs the actions and drives the 13 LEDs. The menu model is
+# the external component "planch" (components/planch/menu.h): the file that compiles declares its
+# source, local (planch.yaml) or from GitHub (planch/import.yaml).
 #
 # Home Assistant side: package homeassistant/planch.yaml (sensor.planch_menu). In the ESPHome
 # integration options enable "Allow the device to perform Home Assistant actions".
@@ -8,8 +11,6 @@
 # Substitutions required: led_pin (data line of the LED chain).
 
 esphome:
-  includes:
-    - planch/menu.h
   on_boot:
     priority: -100
     then:
@@ -18,7 +19,8 @@ esphome:
           brightness: 100%
           effect: PlancH
 
-json:
+# Menu model (components/planch/menu.h); also brings in ArduinoJson
+planch:
 
 # Name of the panel, set from its device page in Home Assistant (for example Studio): it shows the
 # devices with the labels "PlancH" and "PlancH Studio". Kept in the panel's memory.

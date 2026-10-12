@@ -7,7 +7,8 @@ by room and by type. See [Home Assistant](../home-assistant/index.md) for the se
 | File | Use |
 | --- | --- |
 | [`firmware/planch.yaml`](https://github.com/caccia78/PlancH/blob/main/firmware/planch.yaml) | **The firmware**: menu on the display, keys, LEDs |
-| [`firmware/planch/`](https://github.com/caccia78/PlancH/tree/main/firmware/planch) | Shared logic (`core.yaml`, `menu.h`): keep it next to `planch.yaml` |
+| [`firmware/planch/`](https://github.com/caccia78/PlancH/tree/main/firmware/planch) | The board, the test bench and the shared logic (`core.yaml`), plus the packages used by [adopted panels](#adopt-it-in-the-esphome-device-builder) |
+| [`firmware/components/planch/`](https://github.com/caccia78/PlancH/tree/main/firmware/components/planch) | The menu model (`menu.h`), as an ESPHome external component |
 | [`firmware/planch-bringup.yaml`](https://github.com/caccia78/PlancH/blob/main/firmware/planch-bringup.yaml) | Assembly test: buttons and LED groups on a web page, see the [assembly guide](../build/assembly.md) |
 | [`firmware/planch-test.yaml`](https://github.com/caccia78/PlancH/blob/main/firmware/planch-test.yaml) | Test bench on any ESP32 board, without the PlancH hardware: see [Try it without the hardware](test-bench.md) |
 
@@ -32,9 +33,46 @@ written by the browser (Chrome or Edge on a computer).
 4. At the end choose **Configure Wi-Fi**, pick your network and type its password: it stays on
    the board, not in any file.
 5. Add the board to Home Assistant as described in [Home Assistant](../home-assistant/index.md).
+6. Optional: [adopt it in the ESPHome Device Builder](#adopt-it-in-the-esphome-device-builder)
+   to update it over Wi-Fi and change its settings.
 
 This button installs PlancH on its ESP32-S3-Zero. To try the menu on a spare ESP32 board before
 building PlancH, see [Try it without the hardware](test-bench.md).
+
+## Adopt it in the ESPHome Device Builder
+
+With the **ESPHome Device Builder** add-on in Home Assistant, a PlancH installed from the
+browser shows up by itself, ready to be adopted: no files to copy.
+
+1. Open **ESPHome Device Builder**: the panel appears as *Discovered*. Click **Adopt**, keep
+   the name or change it, and confirm.
+2. The Device Builder writes a short configuration with the name, a new API encryption key, the
+   Wi-Fi of its `secrets.yaml` and one line that loads PlancH from this repository:
+
+    ```yaml
+    packages:
+      caccia78.planch: github://caccia78/PlancH/firmware/planch/import.yaml@main
+    ```
+
+3. Click **Install → Wirelessly**. The first build takes a few minutes.
+4. If Home Assistant asks for the encryption key, copy it from the `api:` section of the
+   panel's configuration.
+
+From then on **Install** builds the latest PlancH from the `main` branch of this repository
+(the Device Builder fetches it again at most once a day). Your own changes go in the panel's
+configuration, below the package, and win over it. For example, to set the touch threshold
+after the [calibration](#calibrating-the-touch-area):
+
+```yaml
+esp32_touch:
+  setup_mode: false
+
+binary_sensor:
+  - id: !extend touch_key
+    threshold: 1200
+```
+
+The test bench works the same way: it adopts `firmware/planch/import-test.yaml`.
 
 ## Flash with ESPHome
 
@@ -42,9 +80,9 @@ You need [ESPHome](https://esphome.io/guides/installing_esphome) on your compute
 (`pip install esphome`, or `uvx esphome` with [uv](https://docs.astral.sh/uv/)), or the ESPHome
 Device Builder add-on in Home Assistant.
 
-1. Download the repository, or just the `firmware/` folder. With the Device Builder, copy
-   `planch.yaml` and the `planch/` folder into the `esphome` folder of Home Assistant (next to
-   `configuration.yaml`).
+1. Download the repository, or just the `firmware/` folder: `planch.yaml` needs the folders
+   `planch/` and `components/` next to it. (With the Device Builder, adopting the panel is
+   simpler: see above.)
 2. Connect the board with a USB-C **data** cable.
 3. Run:
 
@@ -124,11 +162,12 @@ LED brightness is limited to 40% in the firmware to keep the USB current low.
 ## Calibrating the touch area
 
 The touch threshold depends on your board and on the stand. With `setup_mode: true` (the
-default in `planch.yaml`) the ESPHome log prints the raw touch value:
+default in `planch/board.yaml`) the ESPHome log prints the raw touch value:
 
 1. Read the value at rest and with a finger on the ear.
 2. Set `threshold` about halfway between the two.
-3. Set `setup_mode: false` and flash again.
+3. Set `setup_mode: false` and flash again. On an adopted panel, put both in its own
+   configuration as shown in [Adopt it in the ESPHome Device Builder](#adopt-it-in-the-esphome-device-builder).
 
 ## Test bench without the hardware
 

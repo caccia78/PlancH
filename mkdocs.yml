@@ -97,7 +97,9 @@ nav:
   - Firmware:
       - firmware/index.md
       - Try it without the hardware: firmware/test-bench.md
-  - Home Assistant: home-assistant/index.md
+  - Home Assistant:
+      - home-assistant/index.md
+      - Usage examples: home-assistant/examples.md
   - About:
       - License: about/license.md
       - Changelog: about/changelog.md

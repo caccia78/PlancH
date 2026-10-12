@@ -104,49 +104,7 @@ cannot read them, so the panel uses this list instead. Lights with a white tempe
 **White** row, lights with effects (WLED and many others) an **Effect** row: see the
 [Firmware](../firmware/index.md#keys-and-display) page.
 
-## Example: a status LED for the front door
+## Examples
 
-D2 and D3 on the ear are free for your automations:
-
-```yaml
-automation:
-  - alias: "PlancH: D2 red while the front door is open"
-    triggers:
-      - trigger: state
-        entity_id: binary_sensor.front_door
-    actions:
-      - if:
-          - condition: state
-            entity_id: binary_sensor.front_door
-            state: "on"
-        then:
-          - action: light.turn_on
-            target:
-              entity_id: light.planch_status_led_2
-            data:
-              rgb_color: [255, 0, 0]
-              brightness_pct: 40
-        else:
-          - action: light.turn_off
-            target:
-              entity_id: light.planch_status_led_2
-```
-
-## Example: dim the backlight at night
-
-```yaml
-automation:
-  - alias: "PlancH: warm, dim backlight after sunset"
-    triggers:
-      - trigger: sun
-        event: sunset
-    actions:
-      - action: light.turn_on
-        target:
-          entity_id: light.planch_backlight
-        data:
-          rgb_color: [255, 180, 110]
-          brightness_pct: 20
-```
-
-Entity IDs depend on the device name: check them on the device page and adjust the examples.
+Status LEDs for the front door or the washing machine, a kitchen timer on the backlight,
+office and bedside scenes: see [Usage examples](examples.md).

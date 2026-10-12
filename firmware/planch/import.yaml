@@ -1,0 +1,17 @@
+# PlancH - the board as a remote package, for the panels adopted in the ESPHome Device Builder
+# (dashboard_import in planch.yaml). The Device Builder writes a short configuration with the name,
+# the API key and the Wi-Fi secrets, and this line:
+#   packages:
+#     caccia78.planch: github://caccia78/PlancH/firmware/planch/import.yaml@main
+# The includes below are resolved next to this file; the "planch" component comes from GitHub too.
+
+packages:
+  board: !include board.yaml
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/caccia78/PlancH
+      ref: main
+      path: firmware/components
+    components: [planch]
