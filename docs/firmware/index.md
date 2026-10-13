@@ -56,10 +56,10 @@ browser shows up by itself, ready to be adopted: no files to copy.
 
 3. Click **Install → Wirelessly**. The first build takes a few minutes. The install worked if
    the log ends with the panel restarting and showing `Noise encryption: YES`.
-4. The panel now accepts only encrypted connections, so Home Assistant has to learn the new key:
-   copy it from the `api:` section of the panel's configuration and enter it when Home Assistant
-   asks (a **Reauthenticate** notice at the top of **Settings → Devices & services**). If no
-   notice appears, open the ESPHome integration, then **PlancH → ⋮ → Reconfigure**.
+4. The panel now accepts only encrypted connections. Home Assistant usually takes the new key
+   from the Device Builder add-on by itself, within a minute or so. If it asks for the key
+   instead (a **Reauthenticate** notice at the top of **Settings → Devices & services**), copy it
+   from the `api:` section of the panel's configuration.
 
 !!! tip "The panel does not show up as Discovered"
     The Device Builder hides a device when it already has a configuration with the same name, for
