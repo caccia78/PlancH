@@ -54,9 +54,17 @@ browser shows up by itself, ready to be adopted: no files to copy.
       caccia78.planch: github://caccia78/PlancH/firmware/planch/import.yaml@main
     ```
 
-3. Click **Install → Wirelessly**. The first build takes a few minutes.
-4. If Home Assistant asks for the encryption key, copy it from the `api:` section of the
-   panel's configuration.
+3. Click **Install → Wirelessly**. The first build takes a few minutes. The install worked if
+   the log ends with the panel restarting and showing `Noise encryption: YES`.
+4. The panel now accepts only encrypted connections, so Home Assistant has to learn the new key:
+   copy it from the `api:` section of the panel's configuration and enter it when Home Assistant
+   asks (a **Reauthenticate** notice at the top of **Settings → Devices & services**). If no
+   notice appears, open the ESPHome integration, then **PlancH → ⋮ → Reconfigure**.
+
+!!! tip "The panel does not show up as Discovered"
+    The Device Builder hides a device when it already has a configuration with the same name, for
+    example one copied by hand before. Delete that configuration (**⋮ → Delete**), restart the
+    ESPHome Device Builder add-on and reload the page.
 
 From then on **Install** builds the latest PlancH from the `main` branch of this repository
 (the Device Builder fetches it again at most once a day). Your own changes go in the panel's
