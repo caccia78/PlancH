@@ -26,6 +26,10 @@ logger:
 ota:
   - platform: esphome
 wifi:
+  # Without these two lines the first assembled board kept dropping off the network (API reachable
+  # about 1 time in 3, OTA stopped halfway) even at -64 dB; with them it is stable
+  power_save_mode: none
+  output_power: 8.5dB
   ap:
     ssid: "PlancH"
 captive_portal:

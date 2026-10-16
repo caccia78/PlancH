@@ -61,6 +61,13 @@ browser shows up by itself, ready to be adopted: no files to copy.
    instead (a **Reauthenticate** notice at the top of **Settings → Devices & services**), copy it
    from the `api:` section of the panel's configuration.
 
+!!! tip "Install → Wirelessly stops halfway"
+    With a weak Wi-Fi link the upload can stop with an error such as `receiving chunk result`.
+    Nothing is lost: the panel keeps running the firmware it had. Choose **Install → Manual
+    download → Factory format** instead, connect the panel by USB and install the file from
+    [web.esphome.io](https://web.esphome.io) (**Connect**, then **Install**). The Wi-Fi settings
+    stay on the panel.
+
 !!! tip "The panel does not show up as Discovered"
     The Device Builder hides a device when it already has a configuration with the same name, for
     example one copied by hand before. Delete that configuration (**⋮ → Delete**), restart the

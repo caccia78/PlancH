@@ -20,6 +20,9 @@ api:
 ota:
   - platform: esphome
 wifi:
+  # Same settings as planch/board.yaml: with the defaults the board kept dropping off the network
+  power_save_mode: none
+  output_power: 8.5dB
   ap:
     ssid: "PlancH"
 captive_portal:

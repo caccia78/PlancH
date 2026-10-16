@@ -42,6 +42,9 @@ the back of the board.
 - Adoption in the ESPHome Device Builder: a panel (or the test bench) installed from the browser
   can be adopted and then updated over Wi-Fi, loading the firmware from this repository. The menu
   model is now an ESPHome external component (`firmware/components/planch/`).
+- Wi-Fi on the board: power saving off and transmit power 8.5 dB. With the defaults the first
+  assembled board kept dropping off the network; adopted panels get the change at the next
+  Install.
 
 ### Documentation
 
