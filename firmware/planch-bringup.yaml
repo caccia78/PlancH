@@ -51,13 +51,16 @@ display:
       it.print(0, 0, id(font_small), "PlancH");
 
 esp32_touch:
+  # ESP32-S3: with the default 8 ms the counter saturates (fixed value 4194303); ESPHome suggests 0.25 ms
+  measurement_duration: 0.25ms
+  sleep_duration: 0.5ms
   setup_mode: true   # logs raw values to calibrate the threshold
 
 binary_sensor:
   - platform: esp32_touch
     name: "Touch"
     pin: GPIO13
-    threshold: 1000   # provisional value, calibrate after assembly
+    threshold: 2500   # rise over the resting value (benchmark), as in planch/board.yaml
 
   # Buttons to GND with internal pull-up; debounce in firmware
   - platform: gpio

@@ -489,9 +489,11 @@ Keep it clean, with no tape or flux residue.
 
 - [ ] Clean flux residue on both sides.
 - [ ] With the test firmware (`setup_mode: true` under `esp32_touch`) read the touch values in
-      the log at rest and with a finger on the ear: the threshold goes about halfway.
-- [ ] In the final firmware `firmware/planch.yaml` set that `threshold` and `setup_mode: false`,
-      then flash it (USB or over Wi-Fi): from now on the display shows the menu, see
+      the log at rest and with a finger on the ear: the value must rise by a few thousand (first
+      board: about 10 500 at rest, 15 000 to 28 000 touched). The firmware threshold, 2500, is the
+      rise over the resting value; change it only if the touch misbehaves, see
+      [Calibrating the touch area](../firmware/index.md#calibrating-the-touch-area).
+- [ ] Flash the final firmware `firmware/planch.yaml` (USB or over Wi-Fi): from now on the display shows the menu, see
       [Home Assistant](../home-assistant/index.md).
 - [ ] Clean the foot circles with alcohol, let them dry and stick the 6 feet centred on the
       silkscreen circles. Press each one for 10 seconds.
@@ -529,4 +531,5 @@ of the panel.
 | A button is always pressed | Solder bridge or flux in the mechanism | Remove the bridge with braid; if the click is soft, replace the switch |
 | Black display | Pin order, cold joint, different address | Check GND/VIN/SCK/SDA; the I²C log shows the address found |
 | The touch triggers by itself | Threshold too close to the resting value | Repeat the calibration with `setup_mode: true` |
+| The touch value is stuck at 4194303 | Measurement too long: counter at the top | Keep `measurement_duration: 0.25ms` under `esp32_touch`, as in the PlancH firmware |
 | A MINI-E lens tilted in its window | LED soldered at an angle | Reflow one leg at a time with flux, pushing the LED with a wooden stick |

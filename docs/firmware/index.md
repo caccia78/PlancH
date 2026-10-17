@@ -75,16 +75,13 @@ browser shows up by itself, ready to be adopted: no files to copy.
 
 From then on **Install** builds the latest PlancH from the `main` branch of this repository
 (the Device Builder fetches it again at most once a day). Your own changes go in the panel's
-configuration, below the package, and win over it. For example, to set the touch threshold
+configuration, below the package, and win over it. For example, to change the touch threshold
 after the [calibration](#calibrating-the-touch-area):
 
 ```yaml
-esp32_touch:
-  setup_mode: false
-
 binary_sensor:
   - id: !extend touch_key
-    threshold: 1200
+    threshold: 3000
 ```
 
 The test bench works the same way: it adopts `firmware/planch/import-test.yaml`.
@@ -170,19 +167,30 @@ LED brightness is limited to 40% in the firmware to keep the USB current low.
 | --- | --- | --- |
 | Up, Down, Left, Right, OK, Back, Scene 1 – Scene 4 | Binary sensor | `on` while pressed: you can use them in automations too |
 | Panel | Text | Name of the panel, picks its devices: see [More than one PlancH](../home-assistant/index.md#more-than-one-planch) |
-| Touch | Binary sensor | Capacitive area on the ear, calibrate the threshold |
+| Touch | Binary sensor | Capacitive area on the ear, wakes the display |
 | Status LED 2, Status LED 3 | Light (RGB) | D2 and D3 on the ear |
 | Backlight | Light (RGB) | D8–D13, towards the desk (or the wall) |
 
 ## Calibrating the touch area
 
-The touch threshold depends on your board and on the stand. With `setup_mode: true` (the
-default in `planch/board.yaml`) the ESPHome log prints the raw touch value:
+The firmware comes with a threshold that works on the first assembled board: about 10 500 at
+rest, 15 000 to 28 000 with a finger, threshold 2500. Calibrate only if the touch triggers by
+itself or misses light touches:
 
-1. Read the value at rest and with a finger on the ear.
-2. Set `threshold` about halfway between the two.
-3. Set `setup_mode: false` and flash again. On an adopted panel, put both in its own
-   configuration as shown in [Adopt it in the ESPHome Device Builder](#adopt-it-in-the-esphome-device-builder).
+1. Set `setup_mode: true` under `esp32_touch`: the ESPHome log prints the touch value and the
+   resting value it is compared with (`benchmark`).
+2. Read the value at rest and with a light finger on the ear.
+3. On the ESP32-S3 the threshold is the **rise** over the resting value, not an absolute value:
+   set `threshold` to about half of (touched − resting). With the numbers above:
+   (15 000 − 10 500) / 2 ≈ 2250.
+4. Set `setup_mode: false` again (it slows the panel down) and flash. On an adopted panel, put
+   the changes in its own configuration as shown in
+   [Adopt it in the ESPHome Device Builder](#adopt-it-in-the-esphome-device-builder).
+
+!!! note "Touch stuck at 4194303"
+    That is the top of the counter: the measurement takes too long. The PlancH firmware sets
+    `measurement_duration: 0.25ms`, as ESPHome suggests for the ESP32-S3; with the 8 ms default
+    the touch never responds.
 
 ## Test bench without the hardware
 

@@ -45,6 +45,8 @@ the back of the board.
 - Wi-Fi on the board: power saving off and transmit power 8.5 dB. With the defaults the first
   assembled board kept dropping off the network; adopted panels get the change at the next
   Install.
+- Touch area: measurement time 0.25 ms (with the ESPHome default the ESP32-S3 counter was stuck
+  at its top value) and threshold 2500, tested on the first board; setup mode off by default.
 
 ### Documentation
 
