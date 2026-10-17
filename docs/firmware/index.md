@@ -150,6 +150,9 @@ Strip
 The display switches off after 30 seconds without keys; the first key only wakes it up. The
 scene keys work with the display off too.
 
+Hold **OK** and **Back** together for 3 seconds to open the hidden games: see
+[PlancH Arcade](arcade.md).
+
 ## LEDs
 
 | LED | Meaning |

@@ -97,6 +97,7 @@ nav:
   - Firmware:
       - firmware/index.md
       - Try it without the hardware: firmware/test-bench.md
+      - PlancH Arcade: firmware/arcade.md
   - Home Assistant:
       - home-assistant/index.md
       - Usage examples: home-assistant/examples.md

@@ -19,7 +19,7 @@ esphome:
           brightness: 100%
           effect: PlancH
 
-# Menu model (components/planch/menu.h); also brings in ArduinoJson
+# Menu model (components/planch/menu.h) and PlancH Arcade (arcade.h); also brings in ArduinoJson
 planch:
 
 # Name of the panel, set from its device page in Home Assistant (for example Studio): it shows the
@@ -133,7 +133,8 @@ script:
       code: int
     then:
       - lambda: |-
-          for (auto &c : planch::menu().key(static_cast<planch::Key>(code), millis())) {
+          // planch::arcade() gives the key to the menu, or to the games while the arcade is open
+          for (auto &c : planch::arcade().press(static_cast<planch::Key>(code), millis())) {
             ESP_LOGI("planch", "%s %s %s %s", c.action.c_str(), c.entity.c_str(), c.field.c_str(), c.value.c_str());
             if (c.field == "brightness_step_pct") id(planch_call_brightness)->execute(c.action, c.entity, c.value, c.scene);
             else if (c.field == "temperature") id(planch_call_temperature)->execute(c.action, c.entity, c.value, c.scene);
@@ -380,5 +381,5 @@ light:
           update_interval: 40ms
           lambda: |-
             planch::Rgb c[planch::Menu::LEDS];
-            planch::menu().leds(c, millis());
+            planch::arcade().leds(c, millis());   // the menu, or the games while the arcade is open
             for (int i = 0; i < planch::Menu::LEDS && i < it.size(); i++) it[i] = Color(c[i].r, c[i].g, c[i].b);

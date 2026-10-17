@@ -51,6 +51,8 @@ the back of the board.
   long names shortened with "…" so the state on the right stays readable. Same layout in the
   `planch-card` (version 1.2).
 
+- PlancH Arcade: four hidden games (Invaders, Echo, Reflex, Dash), opened by holding OK and Back
+  for 3 s, with a best score each kept in the panel's memory.
 - Scene LED brightness: two settings on the panel's device page, for the active scene and for
   the other assigned keys.
 - Backlight off: the backlight LEDs can turn off by themselves, with the screen or after 5 min,

@@ -14,4 +14,7 @@ external_components:
       url: https://github.com/caccia78/PlancH
       ref: main
       path: firmware/components
+    # Fetched again at every build, like the package: with the default (once a day) a panel could
+    # build the new YAML files with yesterday's component, or the other way round
+    refresh: 0s
     components: [planch]
