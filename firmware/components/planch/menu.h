@@ -254,6 +254,10 @@ class Menu {
   // Automatic off of the backlight LEDs: 0 never, -1 with the screen, otherwise ms without keys.
   // Only the LEDs: the Backlight light keeps its state, the next key or touch brings them back
   void set_backlight_off(int32_t ms) { backlight_off_ = ms; }
+  // Brightness of the scene LEDs D4-D7, 0-1: active = active scene, pending key and the green or
+  // red flash; idle = the other assigned keys, as a share of the full colour
+  void set_scene_active(float k) { if (!std::isnan(k)) set_(&scene_active_, 0, k); }
+  void set_scene_idle(float k) { if (!std::isnan(k)) set_(&scene_idle_, 0, k); }
 
   // Title and up to ROWS rows; selected() is the highlighted row (-1 none)
   std::string title() const { return screen_().title; }
@@ -293,12 +297,12 @@ class Menu {
     bool awake = screen_on_ || recent(scene_wake_, SCENE_AWAKE_MS);
     for (int i = 0; i < 4; i++) {
       if (recent(result_[i], result_ok_[i] ? OK_MS : ERROR_MS)) {
-        out[3 + i] = result_ok_[i] ? Rgb{0, 200, 0} : Rgb{200, 0, 0};
+        out[3 + i] = scale_(result_ok_[i] ? Rgb{0, 200, 0} : Rgb{200, 0, 0}, scene_active_);
         continue;
       }
       if (!awake || scenes_[i].entity.empty()) continue;
       bool pending = recent(pressed_[i], PENDING_MS) && !answered_[i];
-      out[3 + i] = (scenes_[i].active || pending) ? Rgb{255, 160, 60} : Rgb{25, 15, 5};
+      out[3 + i] = scale_(Rgb{255, 160, 60}, (scenes_[i].active || pending) ? scene_active_ : scene_idle_);
     }
     bool backlight = backlight_off_ == 0 || (backlight_off_ < 0 ? screen_on_ : now - last_input_ < uint32_t(backlight_off_));
     if (backlight)
@@ -334,6 +338,7 @@ class Menu {
   bool valid_ = false, warning_ = false, connected_ = false, screen_on_ = true;
   float backlight_[3] = {0, 0, 0}, status_leds_[2][3] = {{0, 0, 0}, {0, 0, 0}};
   int32_t backlight_off_ = 0;
+  float scene_active_ = 1.0f, scene_idle_ = 0.1f;
   uint32_t last_input_ = 0, error_ = 0, scene_wake_ = 0;   // times in ms, 0 = never
   uint32_t pressed_[4] = {0, 0, 0, 0}, result_[4] = {0, 0, 0, 0};
   bool result_ok_[4] = {false, false, false, false}, answered_[4] = {false, false, false, false};
@@ -345,6 +350,8 @@ class Menu {
   static void set_(float *rgb, int channel, float level) {
     if (channel >= 0 && channel < 3) rgb[channel] = level < 0 ? 0 : level > 1 ? 1 : level;
   }
+
+  static Rgb scale_(Rgb c, float k) { return Rgb{uint8_t(c.r * k + 0.5f), uint8_t(c.g * k + 0.5f), uint8_t(c.b * k + 0.5f)}; }
 
   static Rgb rgb_(const float *c) { return Rgb{uint8_t(c[0] * 255), uint8_t(c[1] * 255), uint8_t(c[2] * 255)}; }
 

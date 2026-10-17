@@ -58,6 +58,40 @@ select:
           static const int32_t ms[] = {0, -1, 5 * 60000, 15 * 60000, 60 * 60000};
           planch::menu().set_backlight_off(i < 5 ? ms[i] : 0);
 
+# Brightness of the scene LEDs D4-D7: active scene (and the green or red flash after a key), and
+# the other assigned keys as a share of the full colour. Kept in the panel's memory.
+number:
+  - platform: template
+    id: scene_led_active
+    name: "Scene LED active"
+    icon: mdi:brightness-7
+    entity_category: config
+    unit_of_measurement: "%"
+    mode: slider
+    min_value: 5
+    max_value: 100
+    step: 5
+    initial_value: 100
+    optimistic: true
+    restore_value: true
+    on_value:
+      - lambda: planch::menu().set_scene_active(x / 100.0f);
+  - platform: template
+    id: scene_led_idle
+    name: "Scene LED idle"
+    icon: mdi:brightness-5
+    entity_category: config
+    unit_of_measurement: "%"
+    mode: slider
+    min_value: 0
+    max_value: 50
+    step: 1
+    initial_value: 10
+    optimistic: true
+    restore_value: true
+    on_value:
+      - lambda: planch::menu().set_scene_idle(x / 100.0f);
+
 api:
   on_client_connected:
     - lambda: planch::menu().set_connected(true);
