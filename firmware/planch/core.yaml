@@ -93,10 +93,6 @@ number:
       - lambda: planch::menu().set_scene_idle(x / 100.0f);
 
 api:
-  on_client_connected:
-    - lambda: planch::menu().set_connected(true);
-  on_client_disconnected:
-    - lambda: planch::menu().set_connected(false);
 
 text_sensor:
   # Menus built by Home Assistant, one per panel: rooms, types, devices with their state (JSON);
@@ -293,6 +289,16 @@ interval:
   - interval: 1s
     then:
       - lambda: planch::menu().tick(millis());
+      # Link to Home Assistant (D1): a client subscribed to the states. Log viewers (Device Builder,
+      # esphome logs) are API clients too: their disconnection must not count as losing Home Assistant
+      - if:
+          condition:
+            api.connected:
+              state_subscription_only: true
+          then:
+            - lambda: planch::menu().set_connected(true);
+          else:
+            - lambda: planch::menu().set_connected(false);
 
 # Backlight D8-D13 and status LEDs D2, D3: RGB lights in Home Assistant whose channels feed the
 # LED effect

@@ -56,7 +56,10 @@ the back of the board.
 - Backlight off: the backlight LEDs can turn off by themselves, with the screen or after 5 min,
   15 min or 1 h without keys (setting on the panel's device page).
 - Room climate: temperature next to each room in the room list, temperature and humidity next to
-  the title inside a room, from the labelled temperature and humidity sensors of the room's area; planch-card 1.3.
+  the title inside a room, from the labelled temperature and humidity sensors of the room's area
+  (temperature also from sensors in °C or °F without a device class); planch-card 1.3.
+- Fixed: the status LED D1 turned red (no Home Assistant) after a log viewer disconnected, while
+  Home Assistant was still connected.
 
 ### Documentation
 
