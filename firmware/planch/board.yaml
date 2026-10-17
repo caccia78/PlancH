@@ -61,6 +61,14 @@ display:
     id: oled
     update_interval: 100ms
     lambda: |-
+      // PlancH Invaders while it is open (OK and Back held for 3 s)
+      if (planch::arcade().active()) {
+        auto &g = planch::arcade().game();
+        for (int y = 0; y < 64; y++)
+          for (int x = 0; x < 128; x++)
+            if (g.pixel(x, y)) it.draw_pixel_at(x, y, COLOR_ON);
+        return;
+      }
       auto &m = planch::menu();
       if (!m.screen_on()) return;
       // Width of a text in pixels, and the same text shortened to w pixels with "…"
@@ -93,6 +101,28 @@ display:
                  fit(rows[i].left, id(font_row), 126 - rw - 6).c_str());
       }
 
+# PlancH Invaders: the keys report their release too (above), the game runs and redraws every 30 ms
+# while it is open; the best score is kept in the panel's memory
+globals:
+  - id: invaders_best
+    type: uint32_t
+    restore_value: true
+    initial_value: "0"
+
+interval:
+  - interval: 30ms
+    then:
+      - lambda: |-
+          auto &a = planch::arcade();
+          static bool ready = false;
+          if (!ready) {
+            ready = true;
+            a.enable();
+            a.set_best(id(invaders_best));
+          }
+          if (a.loop(millis())) id(oled).update();
+          if (a.best() != id(invaders_best)) id(invaders_best) = a.best();
+
 esp32_touch:
   # ESP32-S3: with the default 8 ms the counter saturates (fixed value 4194303); ESPHome suggests 0.25 ms
   measurement_duration: 0.25ms
@@ -114,11 +144,13 @@ binary_sensor:
     pin: { number: GPIO1, inverted: true, mode: { input: true, pullup: true } }
     filters: [delayed_on: 10ms]
     on_press: [script.execute: { id: planch_key, code: 0 }]
+    on_release: [lambda: "planch::arcade().release(planch::UP);"]
   - platform: gpio
     name: "Down"
     pin: { number: GPIO2, inverted: true, mode: { input: true, pullup: true } }
     filters: [delayed_on: 10ms]
     on_press: [script.execute: { id: planch_key, code: 1 }]
+    on_release: [lambda: "planch::arcade().release(planch::DOWN);"]
   - platform: gpio
     name: "Left"
     pin:
@@ -128,38 +160,46 @@ binary_sensor:
       ignore_strapping_warning: true
     filters: [delayed_on: 10ms]
     on_press: [script.execute: { id: planch_key, code: 2 }]
+    on_release: [lambda: "planch::arcade().release(planch::LEFT);"]
   - platform: gpio
     name: "Right"
     pin: { number: GPIO4, inverted: true, mode: { input: true, pullup: true } }
     filters: [delayed_on: 10ms]
     on_press: [script.execute: { id: planch_key, code: 3 }]
+    on_release: [lambda: "planch::arcade().release(planch::RIGHT);"]
   - platform: gpio
     name: "OK"
     pin: { number: GPIO5, inverted: true, mode: { input: true, pullup: true } }
     filters: [delayed_on: 10ms]
     on_press: [script.execute: { id: planch_key, code: 4 }]
+    on_release: [lambda: "planch::arcade().release(planch::OK);"]
   - platform: gpio
     name: "Back"
     pin: { number: GPIO44, inverted: true, mode: { input: true, pullup: true } }
     filters: [delayed_on: 10ms]
     on_press: [script.execute: { id: planch_key, code: 5 }]
+    on_release: [lambda: "planch::arcade().release(planch::BACK);"]
   - platform: gpio
     name: "Scene 1"
     pin: { number: GPIO9, inverted: true, mode: { input: true, pullup: true } }
     filters: [delayed_on: 10ms]
     on_press: [script.execute: { id: planch_key, code: 6 }]
+    on_release: [lambda: "planch::arcade().release(planch::S1);"]
   - platform: gpio
     name: "Scene 2"
     pin: { number: GPIO8, inverted: true, mode: { input: true, pullup: true } }
     filters: [delayed_on: 10ms]
     on_press: [script.execute: { id: planch_key, code: 7 }]
+    on_release: [lambda: "planch::arcade().release(planch::S2);"]
   - platform: gpio
     name: "Scene 3"
     pin: { number: GPIO7, inverted: true, mode: { input: true, pullup: true } }
     filters: [delayed_on: 10ms]
     on_press: [script.execute: { id: planch_key, code: 8 }]
+    on_release: [lambda: "planch::arcade().release(planch::S3);"]
   - platform: gpio
     name: "Scene 4"
     pin: { number: GPIO6, inverted: true, mode: { input: true, pullup: true } }
     filters: [delayed_on: 10ms]
     on_press: [script.execute: { id: planch_key, code: 9 }]
+    on_release: [lambda: "planch::arcade().release(planch::S4);"]

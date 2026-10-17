@@ -12,6 +12,6 @@ external_components:
   - source:
       type: git
       url: https://github.com/caccia78/PlancH
-      ref: main
+      ref: planch-invaders   # test branch: back to main before merging
       path: firmware/components
     components: [planch]
