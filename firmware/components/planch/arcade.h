@@ -9,6 +9,7 @@
 #include "game.h"
 #include "invaders.h"
 #include "menu.h"
+#include "reflex.h"
 
 #include <vector>
 
@@ -18,7 +19,7 @@ class Arcade : public Bitmap {
  public:
   static constexpr uint32_t HOLD_MS = 3000;   // OK + Back to open, Back to leave
   static constexpr uint32_t IDLE_MS = 60000;  // no keys outside a match: back to the menu
-  static constexpr int GAMES = 2;
+  static constexpr int GAMES = 3;
 
   void enable() { enabled_ = true; }
   bool active() const { return mode_ != OFF; }
@@ -130,7 +131,7 @@ class Arcade : public Bitmap {
         bool sel = i == cursor_;
         if (sel) fill_(0, y - 2, W, 9, true);
         text_(4, y, games_[i]->name(), 1, sel);
-        std::string b = num_(games_[i]->best(), 4);
+        std::string b = games_[i]->score_text();
         text_(W - 4 - text_w_(b, 1), y, b, 1, sel);
       }
       centre_text_(57, (now / 2500) % 2 ? "HOLD BACK: EXIT" : "OK: PLAY", 1);
@@ -146,7 +147,8 @@ class Arcade : public Bitmap {
   // Order of the list; the best scores are kept by position: add new games at the end
   Invaders invaders_;
   Echo echo_;
-  Game *games_[GAMES] = {&invaders_, &echo_};
+  Reflex reflex_;
+  Game *games_[GAMES] = {&invaders_, &echo_, &reflex_};
   Mode mode_ = OFF;
   bool enabled_ = false;
   bool held_[TOUCH + 1] = {};

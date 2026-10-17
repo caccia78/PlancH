@@ -127,6 +127,8 @@ class Game : public Bitmap {
 
   uint32_t best() const { return best_; }
   void set_best(uint32_t b) { best_ = b; }
+  // The best score as the list of games shows it
+  virtual std::string score_text() const { return num_(best_, 4); }
 
  protected:
   static float tri_(uint32_t now, uint32_t period) {
