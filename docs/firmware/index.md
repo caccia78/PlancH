@@ -173,16 +173,18 @@ LED brightness is limited to 40% in the firmware to keep the USB current low.
 
 ## Calibrating the touch area
 
-The firmware comes with a threshold that works on the first assembled board: about 10 500 at
-rest, 15 000 to 28 000 with a finger, threshold 2500. Calibrate only if the touch triggers by
-itself or misses light touches:
+The firmware comes with a threshold that works on the first assembled board: about 110 000 at
+rest (jumping by up to 3 800 between two levels), 210 000 to 280 000 with a finger, threshold
+40 000. Calibrate only if the touch triggers by itself (the display then never turns off) or
+misses light touches:
 
 1. Set `setup_mode: true` under `esp32_touch`: the ESPHome log prints the touch value and the
    resting value it is compared with (`benchmark`).
 2. Read the value at rest and with a light finger on the ear.
 3. On the ESP32-S3 the threshold is the **rise** over the resting value, not an absolute value:
-   set `threshold` to about half of (touched − resting). With the numbers above:
-   (15 000 − 10 500) / 2 ≈ 2250.
+   set `threshold` to about half of (touched − resting), and well above how much the resting value
+   moves. With the numbers above: (210 000 − 110 000) / 2 = 50 000; the firmware uses 40 000.
+   Read the numbers in the log, digit by digit: they are large.
 4. Set `setup_mode: false` again (it slows the panel down) and flash. On an adopted panel, put
    the changes in its own configuration as shown in
    [Adopt it in the ESPHome Device Builder](#adopt-it-in-the-esphome-device-builder).

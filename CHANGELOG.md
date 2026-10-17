@@ -46,7 +46,7 @@ the back of the board.
   assembled board kept dropping off the network; adopted panels get the change at the next
   Install.
 - Touch area: measurement time 0.25 ms (with the ESPHome default the ESP32-S3 counter was stuck
-  at its top value) and threshold 2500, tested on the first board; setup mode off by default.
+  at its top value) and threshold 40 000, measured on the first board; setup mode off by default.
 - Display: larger text (11 px), the title in the top 16 px (the yellow band of two-colour OLEDs),
   long names shortened with "…" so the state on the right stays readable. Same layout in the
   `planch-card` (version 1.2).

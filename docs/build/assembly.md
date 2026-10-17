@@ -489,8 +489,8 @@ Keep it clean, with no tape or flux residue.
 
 - [ ] Clean flux residue on both sides.
 - [ ] With the test firmware (`setup_mode: true` under `esp32_touch`) read the touch values in
-      the log at rest and with a finger on the ear: the value must rise by a few thousand (first
-      board: about 10 500 at rest, 15 000 to 28 000 touched). The firmware threshold, 2500, is the
+      the log at rest and with a finger on the ear: the value must rise a lot (first board: about
+      110 000 at rest, 210 000 to 280 000 touched). The firmware threshold, 40 000, is the
       rise over the resting value; change it only if the touch misbehaves, see
       [Calibrating the touch area](../firmware/index.md#calibrating-the-touch-area).
 - [ ] Flash the final firmware `firmware/planch.yaml` (USB or over Wi-Fi): from now on the display shows the menu, see
