@@ -452,7 +452,7 @@ class Invaders : public Game {
     for (int x = 0; x < W; x++)
       if (x % 4 != 3) set_(x, H - 1);
     if (state_ == CLEAR) centre_box_("WAVE " + std::to_string(wave_ + 2));
-    if (paused_) centre_box_("PAUSE");
+    if (paused_) pause_panel_();
   }
 
   void title_screen_(uint32_t now) {

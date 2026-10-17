@@ -66,6 +66,16 @@ class Bitmap {
     for (int yy = y; yy < y + h; yy++) set_(x, yy), set_(x + w - 1, yy);
     text_(x + 4, y + 4, t, 2);
   }
+  // Pause panel over the play area: what OK and Back do
+  void pause_panel_() {
+    int x = 14, y = 17, w = W - 28, h = 44;
+    fill_(x, y, w, h, false);
+    for (int xx = x; xx < x + w; xx++) set_(xx, y), set_(xx, y + h - 1);
+    for (int yy = y; yy < y + h; yy++) set_(x, yy), set_(x + w - 1, yy);
+    centre_text_(y + 6, "PAUSE", 2);
+    centre_text_(y + 23, "OK: RESUME", 1);
+    centre_text_(y + 32, "HOLD BACK: EXIT", 1);
+  }
   static std::string num_(uint32_t v, int digits) {
     std::string s = std::to_string(v);
     while ((int) s.size() < digits) s = "0" + s;
