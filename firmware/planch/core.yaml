@@ -41,6 +41,23 @@ text:
           planch::menu().set_menus(id(ha_menu).state);   // menus already received: pick again
           planch::menu().set_scenes(id(ha_scenes).state);
 
+# Automatic off of the backlight LEDs D8-D13 (the Backlight light keeps its state; keys and touch
+# bring them back). Kept in the panel's memory.
+select:
+  - platform: template
+    id: backlight_off
+    name: "Backlight off"
+    icon: mdi:lightbulb-off-outline
+    entity_category: config
+    options: ["Never", "With the screen", "After 5 min", "After 15 min", "After 1 h"]
+    initial_option: "Never"
+    optimistic: true
+    restore_value: true
+    on_value:
+      - lambda: |-
+          static const int32_t ms[] = {0, -1, 5 * 60000, 15 * 60000, 60 * 60000};
+          planch::menu().set_backlight_off(i < 5 ? ms[i] : 0);
+
 api:
   on_client_connected:
     - lambda: planch::menu().set_connected(true);

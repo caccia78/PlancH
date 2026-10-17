@@ -251,6 +251,9 @@ class Menu {
 
   // ---- outputs -----------------------------------------------------------------------------
   bool screen_on() const { return screen_on_; }
+  // Automatic off of the backlight LEDs: 0 never, -1 with the screen, otherwise ms without keys.
+  // Only the LEDs: the Backlight light keeps its state, the next key or touch brings them back
+  void set_backlight_off(int32_t ms) { backlight_off_ = ms; }
 
   // Title and up to ROWS rows; selected() is the highlighted row (-1 none)
   std::string title() const { return screen_().title; }
@@ -297,7 +300,9 @@ class Menu {
       bool pending = recent(pressed_[i], PENDING_MS) && !answered_[i];
       out[3 + i] = (scenes_[i].active || pending) ? Rgb{255, 160, 60} : Rgb{25, 15, 5};
     }
-    for (int i = 7; i < LEDS; i++) out[i] = rgb_(backlight_);
+    bool backlight = backlight_off_ == 0 || (backlight_off_ < 0 ? screen_on_ : now - last_input_ < uint32_t(backlight_off_));
+    if (backlight)
+      for (int i = 7; i < LEDS; i++) out[i] = rgb_(backlight_);
   }
 
   // "#rrggbb" x 13 separated by spaces, for the test bench
@@ -328,6 +333,7 @@ class Menu {
   Scene scenes_[4];
   bool valid_ = false, warning_ = false, connected_ = false, screen_on_ = true;
   float backlight_[3] = {0, 0, 0}, status_leds_[2][3] = {{0, 0, 0}, {0, 0, 0}};
+  int32_t backlight_off_ = 0;
   uint32_t last_input_ = 0, error_ = 0, scene_wake_ = 0;   // times in ms, 0 = never
   uint32_t pressed_[4] = {0, 0, 0, 0}, result_[4] = {0, 0, 0, 0};
   bool result_ok_[4] = {false, false, false, false}, answered_[4] = {false, false, false, false};

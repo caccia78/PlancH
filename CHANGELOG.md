@@ -51,6 +51,8 @@ the back of the board.
   long names shortened with "…" so the state on the right stays readable. Same layout in the
   `planch-card` (version 1.2).
 
+- Backlight off: the backlight LEDs can turn off by themselves, with the screen or after 5 min,
+  15 min or 1 h without keys (setting on the panel's device page).
 - Room climate: temperature next to each room in the room list, temperature and humidity next to
   the title inside a room, from the labelled temperature and humidity sensors of the room's area; planch-card 1.3.
 
