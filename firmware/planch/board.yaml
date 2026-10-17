@@ -106,8 +106,8 @@ binary_sensor:
     name: "Touch"
     pin: GPIO13
     # On the S3 the threshold is the rise over the resting value (benchmark). First board: about
-    # 10500 at rest, 15000-28000 with a finger
-    threshold: 2500
+    # 110000 at rest, jumping by up to 3800 between two levels, 210000-280000 with a finger
+    threshold: 40000
     on_press: [script.execute: { id: planch_key, code: 10 }]
   - platform: gpio
     name: "Up"
