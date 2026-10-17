@@ -1,64 +1,51 @@
-// PlancH Invaders: a small shooter, the bonus game of the PlancH panel.
+// PlancH Invaders: a small shooter, the first game of PlancH Arcade (arcade.h).
 // Rows of invaders march down the blue part of the OLED; the cannon at the bottom moves with
-// Left/Right and fires with OK or a scene key. Score and the bonus ship use the top 16 pixel rows
-// (the yellow band of two-colour modules). LEDs: D1-D3 the lives, D4-D7 the four bunkers (green to
-// red as they crumble), the backlight shows the wave colour and flashes on hits.
-// It draws into its own 128 x 64 bitmap with a built-in 3 x 5 font and has no ESPHome dependency,
-// so it also runs on a PC (frames for the preview GIF).
+// Left/Right and fires with Scene 4 (the bottom scene key). Score and the bonus ship use the top 16
+// pixel rows (the yellow band of two-colour modules). LEDs: D1-D3 the lives, D4-D7 the four bunkers
+// (green to red as they crumble), the backlight shows the wave colour and flashes on hits.
 #pragma once
 
-#include "menu.h"  // Key, Rgb
-
-#include <algorithm>
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
-#include <string>
-#include <vector>
+#include "game.h"
 
 namespace planch {
 
-class Invaders {
+class Invaders : public Game {
  public:
-  static constexpr int W = 128, H = 64;
-  static constexpr int LEDS = 13;
   static constexpr uint32_t TICK_MS = 30;  // game step: about 33 steps per second
 
   enum State { TITLE, PLAY, HIT, CLEAR, OVER };
 
-  // Starts on the title screen
-  void open(uint32_t now) {
+  const char *name() const override { return "INVADERS"; }
+
+  void open(uint32_t now) override {
     state_ = TITLE;
     since_ = now;
     last_ = now;
-    exit_ = false;
+    list_ = false;
     paused_ = false;
     std::memset(held_, 0, sizeof(held_));
     render_(now);
   }
 
-  // Back on the title or game over screen: the panel goes back to the menu
-  bool exit_requested() const { return exit_; }
+  bool wants_list() const override { return list_; }
+  bool playing() const override { return state_ == PLAY || state_ == HIT || state_ == CLEAR; }
   State state() const { return state_; }
   uint32_t score() const { return score_; }
-  uint32_t best() const { return best_; }
-  void set_best(uint32_t b) { best_ = b; }
 
-  // 1 bit per pixel, 16 bytes per row, bit 7 of each byte is the leftmost pixel
-  bool pixel(int x, int y) const { return fb_[y * 16 + x / 8] & (0x80 >> (x & 7)); }
-
-  void press(Key k, uint32_t now) {
+  // Scene 4 fires; OK starts, plays again and resumes; Back (short) pauses, or on the title and
+  // game over screens goes back to the list of games
+  void press(Key k, uint32_t now) override {
     held_[k] = true;
-    bool fire = k == OK || k == S1 || k == S2 || k == S3 || k == S4;
+    bool fire = k == S4;
     switch (state_) {
       case TITLE:
         if (k == OK) start_(now);
-        if (k == BACK) exit_ = true;
+        if (k == BACK) list_ = true;
         break;
       case OVER:
         if (now - since_ < 1000) break;  // a key held while dying does not restart at once
         if (k == OK) start_(now);
-        if (k == BACK) exit_ = true;
+        if (k == BACK) list_ = true;
         break;
       default:
         if (k == BACK) paused_ = !paused_;
@@ -68,10 +55,10 @@ class Invaders {
     }
   }
 
-  void release(Key k) { held_[k] = false; }
+  void release(Key k) override { held_[k] = false; }
 
   // Runs the game up to now in steps of TICK_MS and redraws the bitmap
-  void update(uint32_t now) {
+  void update(uint32_t now) override {
     if (now - last_ > 500) last_ = now - TICK_MS;  // after a pause of the caller, no fast-forward
     while (now - last_ >= TICK_MS) {
       last_ += TICK_MS;
@@ -81,7 +68,7 @@ class Invaders {
   }
 
   // Colours of the 13 LEDs, in chain order as planch::Menu::leds()
-  void leds(Rgb out[LEDS], uint32_t now) const {
+  void leds(Rgb out[LEDS], uint32_t now) const override {
     for (int i = 0; i < LEDS; i++) out[i] = Rgb{};
     bool playing = state_ == PLAY || state_ == HIT || state_ == CLEAR;
     // D1-D3: lives; the life just lost blinks red
@@ -154,24 +141,6 @@ class Invaders {
   static const char *const *bunker_init_() {
     static const char *const b[5] = {".##########.", "############", "############", "####....####", "###......###"};
     return b;
-  }
-
-  // 3 x 5 font: digits, capitals and a few signs; 5 rows of 3 bits, bit 2 = left column
-  static const uint8_t *glyph_(char c) {
-    static const char chars[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ=:?-./";
-    static const uint8_t g[][5] = {
-        {7, 5, 5, 5, 7}, {2, 6, 2, 2, 7}, {7, 1, 7, 4, 7}, {7, 1, 7, 1, 7}, {5, 5, 7, 1, 1},
-        {7, 4, 7, 1, 7}, {7, 4, 7, 5, 7}, {7, 1, 2, 2, 2}, {7, 5, 7, 5, 7}, {7, 5, 7, 1, 7},
-        {2, 5, 7, 5, 5}, {6, 5, 6, 5, 6}, {3, 4, 4, 4, 3}, {6, 5, 5, 5, 6}, {7, 4, 6, 4, 7},
-        {7, 4, 6, 4, 4}, {3, 4, 5, 5, 3}, {5, 5, 7, 5, 5}, {7, 2, 2, 2, 7}, {1, 1, 1, 5, 2},
-        {5, 5, 6, 5, 5}, {4, 4, 4, 4, 7}, {5, 7, 7, 5, 5}, {6, 5, 5, 5, 5}, {2, 5, 5, 5, 2},
-        {6, 5, 6, 4, 4}, {2, 5, 5, 6, 3}, {6, 5, 6, 5, 5}, {3, 4, 2, 1, 6}, {7, 2, 2, 2, 2},
-        {5, 5, 5, 5, 7}, {5, 5, 5, 5, 2}, {5, 5, 7, 7, 5}, {5, 5, 2, 5, 5}, {5, 5, 2, 2, 2},
-        {7, 1, 2, 4, 7}, {0, 7, 0, 7, 0}, {0, 2, 0, 2, 0}, {6, 1, 2, 0, 2}, {0, 0, 7, 0, 0},
-        {0, 0, 0, 0, 2}, {1, 1, 2, 4, 4},
-    };
-    const char *p = std::strchr(chars, c);
-    return (c && p) ? g[p - chars] : nullptr;
   }
 
   // --- Game
@@ -249,7 +218,7 @@ class Invaders {
     // Cannon: Left/Right held, 1.5 px per step
     if (held_[LEFT] && !held_[RIGHT]) px16_ = std::max(4 * 16, px16_ - 24);
     if (held_[RIGHT] && !held_[LEFT]) px16_ = std::min((W - 5) * 16, px16_ + 24);
-    if (held_[OK] || held_[S1] || held_[S2] || held_[S3] || held_[S4]) fire_();
+    if (held_[S4]) fire_();
 
     move_bullet_(now);
     march_invaders_(now);
@@ -449,7 +418,7 @@ class Invaders {
   // --- Drawing
 
   void render_(uint32_t now) {
-    std::memset(fb_, 0, sizeof(fb_));
+    clear_();
     switch (state_) {
       case TITLE: title_screen_(now); return;
       case OVER: over_screen_(now); return;
@@ -495,7 +464,8 @@ class Invaders {
     }
     sprite_(38, 46, ufo_bitmap_(), 4);
     text_(52, 46, "= ?", 1);
-    if ((now / 500) % 2) text_((W - text_w_("PRESS OK", 1)) / 2, 57, "PRESS OK", 1);
+    if ((now / 2000) % 2) centre_text_(57, "FIRE: SCENE 4", 1);
+    else if ((now / 500) % 2) centre_text_(57, "PRESS OK", 1);
     text_(84, 27, "BEST", 1);
     text_(84, 34, num_(best_, 4), 1);
   }
@@ -506,60 +476,11 @@ class Invaders {
     text_(W - text_w_(hi, 1), 1, hi, 1);
     text_((W - text_w_("GAME OVER", 2)) / 2, 22, "GAME OVER", 2);
     if (score_ && score_ == best_) text_((W - text_w_("NEW BEST", 1)) / 2, 37, "NEW BEST", 1);
-    if (now - since_ > 1000) text_((W - text_w_("OK PLAY   BACK EXIT", 1)) / 2, 54, "OK PLAY   BACK EXIT", 1);
-  }
-
-  void centre_box_(const std::string &t) {
-    int w = text_w_(t, 2) + 8, h = 18, x = (W - w) / 2, y = 30;
-    for (int yy = y; yy < y + h; yy++)
-      for (int xx = x; xx < x + w; xx++) clr_(xx, yy);
-    for (int xx = x; xx < x + w; xx++) set_(xx, y), set_(xx, y + h - 1);
-    for (int yy = y; yy < y + h; yy++) set_(x, yy), set_(x + w - 1, yy);
-    text_(x + 4, y + 4, t, 2);
-  }
-
-  static std::string num_(uint32_t v, int digits) {
-    std::string s = std::to_string(v);
-    while ((int) s.size() < digits) s = "0" + s;
-    return s;
-  }
-  static int text_w_(const std::string &t, int scale) { return t.empty() ? 0 : (int(t.size()) * 4 - 1) * scale; }
-  void text_(int x, int y, const std::string &t, int scale) {
-    for (char ch : t) {
-      const uint8_t *g = glyph_(ch);
-      if (g)
-        for (int r = 0; r < 5; r++)
-          for (int c = 0; c < 3; c++)
-            if (g[r] & (4 >> c))
-              for (int sy = 0; sy < scale; sy++)
-                for (int sx = 0; sx < scale; sx++) set_(x + c * scale + sx, y + r * scale + sy);
-      x += 4 * scale;
-    }
-  }
-  void sprite_(int x, int y, const char *const *rows, int h) {
-    for (int r = 0; r < h; r++)
-      for (int c = 0; rows[r][c]; c++)
-        if (rows[r][c] == '#') set_(x + c, y + r);
-  }
-  void set_(int x, int y) {
-    if (x >= 0 && x < W && y >= 0 && y < H) fb_[y * 16 + x / 8] |= 0x80 >> (x & 7);
-  }
-  void clr_(int x, int y) {
-    if (x >= 0 && x < W && y >= 0 && y < H) fb_[y * 16 + x / 8] &= ~(0x80 >> (x & 7));
+    if (now - since_ > 1000) centre_text_(54, "OK PLAY   BACK LIST", 1);
   }
 
   // --- Helpers
 
-  uint32_t rnd_() {
-    rng_ ^= rng_ << 13;
-    rng_ ^= rng_ >> 17;
-    rng_ ^= rng_ << 5;
-    return rng_;
-  }
-  static float tri_(uint32_t now, uint32_t period) {
-    float p = float(now % period) / period;
-    return p < 0.5f ? 2 * p : 2 - 2 * p;
-  }
   // Wave colours at a given brightness (0-255): blue, cyan, green, yellow, orange, magenta
   static Rgb wave_colour_(uint32_t wave, int level) {
     static const uint8_t c[6][3] = {{0, 60, 255}, {0, 200, 200}, {0, 220, 40}, {220, 200, 0}, {255, 90, 0}, {220, 0, 180}};
@@ -567,12 +488,11 @@ class Invaders {
     return Rgb{uint8_t(k[0] * level / 255), uint8_t(k[1] * level / 255), uint8_t(k[2] * level / 255)};
   }
 
-  uint8_t fb_[W * H / 8] = {};
   bool held_[TOUCH + 1] = {};
   State state_ = TITLE;
-  bool paused_ = false, exit_ = false;
-  uint32_t last_ = 0, since_ = 0, kill_ = 0, rng_ = 0x2F6E2B1u;
-  uint32_t score_ = 0, best_ = 0;
+  bool paused_ = false, list_ = false;
+  uint32_t last_ = 0, since_ = 0, kill_ = 0;
+  uint32_t score_ = 0;
   int lives_ = 3, wave_ = 0;
   bool alive_[ROWS][COLS] = {};
   int ax_ = 0, ay_ = 0, dir_ = 1, frame_ = 0, march_ = 0;
@@ -584,76 +504,5 @@ class Invaders {
   uint16_t bunker_[4][5] = {};
   int bunker_full_ = 0;
 };
-
-// Routes the keys to the menu or to the game. OK and Back held together for 3 s open the game, only
-// where the board reports the key releases (enable()); Back on the title or game over screen, or a
-// minute without keys outside a game, go back to the menu.
-class Arcade {
- public:
-  static constexpr uint32_t HOLD_MS = 3000, IDLE_MS = 60000;
-
-  void enable() { enabled_ = true; }
-  bool active() const { return active_; }
-  const Invaders &game() const { return game_; }
-  uint32_t best() const { return game_.best(); }
-  void set_best(uint32_t b) { game_.set_best(b); }
-
-  // Key pressed: in the menu it returns the Home Assistant actions to perform
-  std::vector<Call> press(Key k, uint32_t now) {
-    held_[k] = true;
-    last_ = now;
-    if (active_) {
-      game_.press(k, now);
-      return {};
-    }
-    return menu().key(k, now);
-  }
-
-  void release(Key k) {
-    held_[k] = false;
-    if (active_) game_.release(k);
-  }
-
-  // Called every few ms: opens and closes the game, runs it; true while the game is on screen
-  bool loop(uint32_t now) {
-    if (!active_) {
-      if (enabled_ && held_[OK] && held_[BACK]) {
-        if (!both_) both_ = now | 1;
-        else if (now - both_ >= HOLD_MS) {
-          active_ = true;
-          both_ = 0;
-          last_ = now;
-          game_.open(now);
-        }
-      } else {
-        both_ = 0;
-      }
-      return active_;
-    }
-    game_.update(now);
-    bool waiting = game_.state() == Invaders::TITLE || game_.state() == Invaders::OVER;
-    if (game_.exit_requested() || (waiting && now - last_ > IDLE_MS)) {
-      active_ = false;
-      menu().key(TOUCH, now);  // back to the menu with the screen on
-    }
-    return true;
-  }
-
-  void leds(Rgb out[Invaders::LEDS], uint32_t now) const {
-    if (active_) game_.leds(out, now);
-    else menu().leds(out, now);
-  }
-
- private:
-  Invaders game_;
-  bool enabled_ = false, active_ = false;
-  bool held_[TOUCH + 1] = {};
-  uint32_t both_ = 0, last_ = 0;
-};
-
-inline Arcade &arcade() {
-  static Arcade a;
-  return a;
-}
 
 }  // namespace planch
