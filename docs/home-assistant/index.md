@@ -50,8 +50,9 @@ lights, switches (smart plugs), covers and thermostats (climate) you want on the
   "Lamp"), cut to 16 characters.
 
 Each room can also show its **temperature and humidity**: put the label **PlancH** (or the
-panel's own label) on a temperature or humidity sensor, or on its device, as for the other
-devices. The package reads, for each room in the menu, the labelled sensors of that area; if there
+panel's own label) on a temperature or humidity sensor, or on a device that only has sensors (a
+thermometer). The sensors of a labelled light, plug, cover or thermostat do not count: many relays
+and bulbs report their own internal temperature. The package reads, for each room in the menu, the labelled sensors of that area; if there
 are several of the same type it uses the first by entity id. The temperature appears next to each
 room in the room list, temperature and humidity next to the title inside a room. A room without
 labelled sensors (and "Other") simply shows none.
