@@ -9,6 +9,11 @@
 # - Put the label "PlancH" on the lights, switches (smart plugs), covers and thermostats
 #   (climate) to control, or on their device: they appear on every panel. PlancH groups them by
 #   area (room) and by type; no area -> "Other".
+# - Put the label "PlancH" (or "PlancH Studio") also on temperature and humidity sensors, or on
+#   a device with sensors only (a thermometer): the panel shows the room temperature and humidity
+#   next to the room (one sensor per type: the first by entity id). The sensors of a labelled
+#   light, plug, cover or thermostat do not count (a relay reports its own internal temperature).
+#   Rooms without labelled sensors show nothing.
 # - Several panels: give each one a name in the field "Panel" on its device page (for example
 #   Studio) and put the label "PlancH Studio" on the devices for that panel only. A device can
 #   have several labels. Panels without a name, or with a name without a label, show the
@@ -77,7 +82,9 @@ template:
           # {"r": [{"n": room, "d": [{"e": entity, "n": name, "t": l|s|c|h, "s": state,
           #   "v": brightness % | position % | target temperature, "c": current temperature,
           #   lights only: "m": features (b brightness, c colour, t white, e effects),
-          #   "hs": [hue, saturation], "k": white kelvin, "kr": [min, max], "f": effect}]}],
+          #   "hs": [hue, saturation], "k": white kelvin, "kr": [min, max], "f": effect}],
+          #   "t": temperature, "h": humidity of the room (first labelled temperature and humidity
+          #   sensor in its area, by entity id, only when there is one)}],
           #  "w": 1 if the limits cut the list}
           menus: >-
             {%- set max_rooms, max_per_room, max_total = 8, 8, 32 %}
@@ -91,13 +98,22 @@ template:
             {%- set panels = (ns_p.panels | sort(attribute='0'))[:7] %}
             {%- set out = namespace(menus=[]) %}
             {%- for key, label in panels %}
-            {%- set ns = namespace(ids=label_entities('PlancH')) %}
-            {%- for d in label_devices('PlancH') %}{% set ns.ids = ns.ids + device_entities(d) %}{% endfor %}
-            {%- if key %}
-              {%- set ns.ids = ns.ids + label_entities(label) %}
-              {%- for d in label_devices(label) %}{% set ns.ids = ns.ids + device_entities(d) %}{% endfor %}
-            {%- endif %}
+            {%- set ns = namespace(ids=[], sens=[]) %}
+            {%- for l in ['PlancH', label] if l == 'PlancH' or key %}
+              {%- set ns.ids = ns.ids + label_entities(l) %}
+              {%- set ns.sens = ns.sens + label_entities(l) %}
+              {%- for d in label_devices(l) %}
+                {%- set de = device_entities(d) %}
+                {%- set ns.ids = ns.ids + de %}
+                {#- climate sensors of a labelled device only if it has nothing to control (a thermometer,
+                    not the internal temperature of a relay or a bulb) #}
+                {%- if de | select('match', '(light|switch|cover|climate)\.') | list | count == 0 %}
+                  {%- set ns.sens = ns.sens + de %}
+                {%- endif %}
+              {%- endfor %}
+            {%- endfor %}
             {%- set ids = ns.ids | unique | select('match', '(light|switch|cover|climate)\.') | list %}
+            {%- set sensors = ns.sens | unique | select('match', 'sensor\.') | sort | list %}
             {%- set ns = namespace(areas=[], rooms=[], total=0, cut=false) %}
             {%- for e in ids %}{% set ns.areas = ns.areas + [area_name(e) or 'Other'] %}{% endfor %}
             {%- set areas = ns.areas | unique | sort | list %}
@@ -139,7 +155,16 @@ template:
               {%- set room_left = [max_per_room, max_total - ns.total] | min %}
               {%- if devs | count > room_left %}{% set ns.cut = true %}{% set devs = devs[:[room_left, 0] | max] %}{% endif %}
               {%- if devs | count > 0 %}
-                {%- set ns.rooms = ns.rooms + [{'n': a[:16], 'd': devs}] %}
+                {%- set nc = namespace(t=[], h=[]) %}
+                {%- for x in sensors if a != 'Other' and area_name(x) == a %}
+                  {%- set dc = state_attr(x, 'device_class') %}
+                  {%- if dc == 'temperature' and states(x) | is_number %}{% set nc.t = nc.t + [states(x) | float] %}{% endif %}
+                  {%- if dc == 'humidity' and states(x) | is_number %}{% set nc.h = nc.h + [states(x) | float] %}{% endif %}
+                {%- endfor %}
+                {%- set room = {'n': a[:16], 'd': devs} %}
+                {%- if nc.t %}{% set room = dict(room, t=nc.t | first | round(1)) %}{% endif %}
+                {%- if nc.h %}{% set room = dict(room, h=nc.h | first | round(0) | int) %}{% endif %}
+                {%- set ns.rooms = ns.rooms + [room] %}
                 {%- set ns.total = ns.total + devs | count %}
               {%- endif %}
             {%- endfor %}

@@ -32,6 +32,7 @@ struct Device {
 struct Room {
   std::string name;
   std::vector<Device> devices;
+  float temp = NAN, hum = NAN;  // averages of the sensors in its area (Home Assistant), NAN = none
 };
 
 // Colour of the palette defined in the Home Assistant package (hue 0-360, saturation 0-100)
@@ -131,6 +132,8 @@ class Menu {
     for (JsonObjectConst r : doc["r"].as<JsonArrayConst>()) {
       Room room;
       room.name = r["n"] | "";
+      if (!r["t"].isNull()) room.temp = r["t"].as<float>();
+      if (!r["h"].isNull()) room.hum = r["h"].as<float>();
       for (JsonObjectConst d : r["d"].as<JsonArrayConst>()) {
         Device dev;
         dev.entity = d["e"] | "";
@@ -251,6 +254,8 @@ class Menu {
 
   // Title and up to ROWS rows; selected() is the highlighted row (-1 none)
   std::string title() const { return screen_().title; }
+  // Climate of the room on the right of the title ("21.5° 48%"), empty when there is none
+  std::string info() const { return screen_().info; }
   std::vector<Line> rows() const { return screen_().rows; }
   int selected() const { return screen_().selected; }
 
@@ -259,6 +264,7 @@ class Menu {
     if (!screen_on_) return "(screen off)";
     Screen s = screen_();
     std::string out = s.title;
+    if (!s.info.empty()) out += "  " + s.info;
     for (size_t i = 0; i < s.rows.size(); i++) {
       std::string line = (int(i) == s.selected ? "> " : "  ") + s.rows[i].left;
       if (!s.rows[i].right.empty()) {
@@ -310,7 +316,7 @@ class Menu {
  private:
   enum Level { ROOMS, TYPES, DEVICES, CONTROL };
   struct Screen {
-    std::string title;
+    std::string title, info;
     std::vector<Line> rows;
     int selected = -1;
   };
@@ -346,6 +352,13 @@ class Menu {
     if (domain == "automation") return "automation.trigger";
     if (domain == "button" || domain == "input_button") return domain + ".press";
     return "homeassistant.turn_on";
+  }
+
+  // "21.5° 48%", "21.5°" or "48%"
+  static std::string climate_(const Room &r) {
+    std::string t = std::isnan(r.temp) ? "" : fmt_(r.temp, "%.1f°");
+    std::string h = std::isnan(r.hum) ? "" : fmt_(r.hum, "%.0f%%");
+    return t.empty() || h.empty() ? t + h : t + " " + h;
   }
 
   static std::string fmt_(float v, const char *f) {
@@ -649,10 +662,11 @@ class Menu {
       return s;
     }
     const Room *r = room_();
+    if (level_ != ROOMS && r) s.info = climate_(*r);
     switch (level_) {
       case ROOMS:
         s.title = warning_ ? "Rooms (limit!)" : "Rooms";
-        for (const Room &room : rooms_) s.rows.push_back({room.name, std::to_string(room.devices.size())});
+        for (const Room &room : rooms_) s.rows.push_back({room.name, std::isnan(room.temp) ? "" : fmt_(room.temp, "%.1f°")});
         page_(s, cursor_[ROOMS], rooms_.size());
         break;
       case TYPES:

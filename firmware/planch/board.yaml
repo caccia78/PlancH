@@ -79,7 +79,12 @@ display:
         }
         return std::string("…");
       };
-      it.print(0, 7, id(font_title), TextAlign::CENTER_LEFT, fit(m.title(), id(font_title), 128).c_str());
+      // Title, and the climate of the room on the right of it
+      std::string info = m.info();
+      int iw = width(info, id(font_title));
+      it.print(0, 7, id(font_title), TextAlign::CENTER_LEFT,
+               fit(m.title(), id(font_title), info.empty() ? 128 : 128 - iw - 4).c_str());
+      if (!info.empty()) it.print(127, 7, id(font_title), TextAlign::CENTER_RIGHT, info.c_str());
       auto rows = m.rows();
       for (int i = 0; i < (int) rows.size(); i++) {
         int y = 16 + i * 12;

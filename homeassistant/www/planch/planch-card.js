@@ -5,7 +5,7 @@
  * Made for the test bench firmware (firmware/planch-test.yaml), which publishes both sensors.
  *
  * Install: copy the folder planch/ (this file and the two .webp pictures) to /config/www/,
- * add the resource /local/planch/planch-card.js?v=1.2 (JavaScript module) under
+ * add the resource /local/planch/planch-card.js?v=1.3 (JavaScript module) under
  * Settings > Dashboards > Resources (change ?v= after every update: browsers cache it hard),
  * then add a card:
  *
@@ -20,7 +20,7 @@
  * left of the main body; the ear goes to Y = -8. The pictures are 10 px per mm, 120 x 52 mm.
  */
 
-const VERSION = "1.2";   // also in the resource URL: /local/planch/planch-card.js?v=1.2
+const VERSION = "1.3";   // also in the resource URL: /local/planch/planch-card.js?v=1.3
 console.info(`%c PLANCH-CARD %c ${VERSION} `, "color:#fff;background:#ff7043;font-weight:600",
              "color:#ff7043;background:#26262a");
 
@@ -63,7 +63,7 @@ function led(hex) {
   return { r: Math.round(r * f), g: Math.round(g * f), b: Math.round(b * f), k: Math.sqrt(max / 255) };
 }
 
-// Text of the "Screen" sensor -> {title, rows: [{left, right, sel}]} or null when off
+// Text of the "Screen" sensor -> {title, info, rows: [{left, right, sel}]} or null when off
 function screen(text) {
   if (!text || text.startsWith("(screen off)") || text === "unknown" || text === "unavailable") return null;
   const lines = text.split("\n");
@@ -72,7 +72,8 @@ function screen(text) {
     const parts = l.slice(2).trim().split(/\s{2,}/);
     return { left: parts[0] || "", right: parts.length > 1 ? parts[parts.length - 1] : "", sel };
   });
-  return { title: lines[0], rows };
+  const head = lines[0].split(/\s{2,}/);  // title, then the climate of the room
+  return { title: head[0], info: head.length > 1 ? head[head.length - 1] : "", rows };
 }
 
 class PlanchCard extends HTMLElement {
@@ -267,7 +268,13 @@ class PlanchCard extends HTMLElement {
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#fff";
     ctx.font = "500 10px Roboto, Arial, sans-serif";
-    ctx.fillText(fit(s.title, 128), 0, 8);
+    const iw = s.info ? ctx.measureText(s.info).width : 0;
+    ctx.fillText(fit(s.title, s.info ? 128 - iw - 4 : 128), 0, 8);
+    if (s.info) {
+      ctx.textAlign = "right";
+      ctx.fillText(s.info, 127, 8);
+      ctx.textAlign = "left";
+    }
     ctx.font = "11px Roboto, Arial, sans-serif";
     s.rows.slice(0, 4).forEach((r, i) => {
       const y = 16 + i * 12;
