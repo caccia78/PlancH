@@ -51,6 +51,9 @@ the back of the board.
   long names shortened with "…" so the state on the right stays readable. Same layout in the
   `planch-card` (version 1.2).
 
+- Room climate: temperature next to each room in the room list, temperature and humidity next to
+  the title inside a room, from the sensors of the room's area (averaged); planch-card 1.3.
+
 ### Documentation
 
 - Usage examples: office, bedside, kitchen timer on the backlight, indicators on the status LEDs.

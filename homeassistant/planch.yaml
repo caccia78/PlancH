@@ -77,7 +77,9 @@ template:
           # {"r": [{"n": room, "d": [{"e": entity, "n": name, "t": l|s|c|h, "s": state,
           #   "v": brightness % | position % | target temperature, "c": current temperature,
           #   lights only: "m": features (b brightness, c colour, t white, e effects),
-          #   "hs": [hue, saturation], "k": white kelvin, "kr": [min, max], "f": effect}]}],
+          #   "hs": [hue, saturation], "k": white kelvin, "kr": [min, max], "f": effect}],
+          #   "t": temperature, "h": humidity of the room (averages of the temperature and humidity
+          #   sensors in its area, only when there are some)}],
           #  "w": 1 if the limits cut the list}
           menus: >-
             {%- set max_rooms, max_per_room, max_total = 8, 8, 32 %}
@@ -139,7 +141,20 @@ template:
               {%- set room_left = [max_per_room, max_total - ns.total] | min %}
               {%- if devs | count > room_left %}{% set ns.cut = true %}{% set devs = devs[:[room_left, 0] | max] %}{% endif %}
               {%- if devs | count > 0 %}
-                {%- set ns.rooms = ns.rooms + [{'n': a[:16], 'd': devs}] %}
+                {%- set nc = namespace(t=[], h=[]) %}
+                {%- if a != 'Other' %}
+                  {%- set ne = namespace(ids=area_entities(a)) %}
+                  {%- for dv in area_devices(a) %}{% set ne.ids = ne.ids + device_entities(dv) %}{% endfor %}
+                  {%- for x in ne.ids | unique | select('match', 'sensor\.') if area_name(x) == a %}
+                    {%- set dc = state_attr(x, 'device_class') %}
+                    {%- if dc == 'temperature' and states(x) | is_number %}{% set nc.t = nc.t + [states(x) | float] %}{% endif %}
+                    {%- if dc == 'humidity' and states(x) | is_number %}{% set nc.h = nc.h + [states(x) | float] %}{% endif %}
+                  {%- endfor %}
+                {%- endif %}
+                {%- set room = {'n': a[:16], 'd': devs} %}
+                {%- if nc.t %}{% set room = dict(room, t=(nc.t | sum / nc.t | count) | round(1)) %}{% endif %}
+                {%- if nc.h %}{% set room = dict(room, h=(nc.h | sum / nc.h | count) | round(0) | int) %}{% endif %}
+                {%- set ns.rooms = ns.rooms + [room] %}
                 {%- set ns.total = ns.total + devs | count %}
               {%- endif %}
             {%- endfor %}
