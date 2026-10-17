@@ -52,7 +52,7 @@ the back of the board.
   `planch-card` (version 1.2).
 
 - Room climate: temperature next to each room in the room list, temperature and humidity next to
-  the title inside a room, from the sensors of the room's area (averaged); planch-card 1.3.
+  the title inside a room, from the labelled temperature and humidity sensors of the room's area; planch-card 1.3.
 
 ### Documentation
 

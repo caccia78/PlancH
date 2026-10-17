@@ -9,6 +9,9 @@
 # - Put the label "PlancH" on the lights, switches (smart plugs), covers and thermostats
 #   (climate) to control, or on their device: they appear on every panel. PlancH groups them by
 #   area (room) and by type; no area -> "Other".
+# - Put the label "PlancH" (or "PlancH Studio") also on temperature and humidity sensors, or on
+#   their device: the panel shows the room temperature and humidity next to the room (one
+#   sensor per type: the first by entity id). Rooms without labelled sensors show nothing.
 # - Several panels: give each one a name in the field "Panel" on its device page (for example
 #   Studio) and put the label "PlancH Studio" on the devices for that panel only. A device can
 #   have several labels. Panels without a name, or with a name without a label, show the
@@ -78,8 +81,8 @@ template:
           #   "v": brightness % | position % | target temperature, "c": current temperature,
           #   lights only: "m": features (b brightness, c colour, t white, e effects),
           #   "hs": [hue, saturation], "k": white kelvin, "kr": [min, max], "f": effect}],
-          #   "t": temperature, "h": humidity of the room (averages of the temperature and humidity
-          #   sensors in its area, only when there are some)}],
+          #   "t": temperature, "h": humidity of the room (first labelled temperature and humidity
+          #   sensor in its area, by entity id, only when there is one)}],
           #  "w": 1 if the limits cut the list}
           menus: >-
             {%- set max_rooms, max_per_room, max_total = 8, 8, 32 %}
@@ -100,6 +103,7 @@ template:
               {%- for d in label_devices(label) %}{% set ns.ids = ns.ids + device_entities(d) %}{% endfor %}
             {%- endif %}
             {%- set ids = ns.ids | unique | select('match', '(light|switch|cover|climate)\.') | list %}
+            {%- set sensors = ns.ids | unique | select('match', 'sensor\.') | sort | list %}
             {%- set ns = namespace(areas=[], rooms=[], total=0, cut=false) %}
             {%- for e in ids %}{% set ns.areas = ns.areas + [area_name(e) or 'Other'] %}{% endfor %}
             {%- set areas = ns.areas | unique | sort | list %}
@@ -142,18 +146,14 @@ template:
               {%- if devs | count > room_left %}{% set ns.cut = true %}{% set devs = devs[:[room_left, 0] | max] %}{% endif %}
               {%- if devs | count > 0 %}
                 {%- set nc = namespace(t=[], h=[]) %}
-                {%- if a != 'Other' %}
-                  {%- set ne = namespace(ids=area_entities(a)) %}
-                  {%- for dv in area_devices(a) %}{% set ne.ids = ne.ids + device_entities(dv) %}{% endfor %}
-                  {%- for x in ne.ids | unique | select('match', 'sensor\.') if area_name(x) == a %}
-                    {%- set dc = state_attr(x, 'device_class') %}
-                    {%- if dc == 'temperature' and states(x) | is_number %}{% set nc.t = nc.t + [states(x) | float] %}{% endif %}
-                    {%- if dc == 'humidity' and states(x) | is_number %}{% set nc.h = nc.h + [states(x) | float] %}{% endif %}
-                  {%- endfor %}
-                {%- endif %}
+                {%- for x in sensors if a != 'Other' and area_name(x) == a %}
+                  {%- set dc = state_attr(x, 'device_class') %}
+                  {%- if dc == 'temperature' and states(x) | is_number %}{% set nc.t = nc.t + [states(x) | float] %}{% endif %}
+                  {%- if dc == 'humidity' and states(x) | is_number %}{% set nc.h = nc.h + [states(x) | float] %}{% endif %}
+                {%- endfor %}
                 {%- set room = {'n': a[:16], 'd': devs} %}
-                {%- if nc.t %}{% set room = dict(room, t=(nc.t | sum / nc.t | count) | round(1)) %}{% endif %}
-                {%- if nc.h %}{% set room = dict(room, h=(nc.h | sum / nc.h | count) | round(0) | int) %}{% endif %}
+                {%- if nc.t %}{% set room = dict(room, t=nc.t | first | round(1)) %}{% endif %}
+                {%- if nc.h %}{% set room = dict(room, h=nc.h | first | round(0) | int) %}{% endif %}
                 {%- set ns.rooms = ns.rooms + [room] %}
                 {%- set ns.total = ns.total + devs | count %}
               {%- endif %}

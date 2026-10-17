@@ -49,10 +49,12 @@ lights, switches (smart plugs), covers and thermostats (climate) you want on the
 - The name shown is the entity name without the room in front ("Living room Lamp" →
   "Lamp"), cut to 16 characters.
 
-Each room also shows its **temperature and humidity**, with nothing to set up: the package
-takes the sensors with the temperature and humidity device class in the room's area and averages
-them. The temperature appears next to each room in the room list, temperature and humidity next to
-the title inside a room. A room without such sensors (and "Other") simply shows none.
+Each room can also show its **temperature and humidity**: put the label **PlancH** (or the
+panel's own label) on a temperature or humidity sensor, or on its device, as for the other
+devices. The package reads, for each room in the menu, the labelled sensors of that area; if there
+are several of the same type it uses the first by entity id. The temperature appears next to each
+room in the room list, temperature and humidity next to the title inside a room. A room without
+labelled sensors (and "Other") simply shows none.
 
 The menu updates by itself: states live, and labels or areas within a couple of seconds (the
 package includes a small automation, **PlancH: refresh the menu when labels or areas change**,
