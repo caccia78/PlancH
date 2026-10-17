@@ -47,6 +47,9 @@ the back of the board.
   Install.
 - Touch area: measurement time 0.25 ms (with the ESPHome default the ESP32-S3 counter was stuck
   at its top value) and threshold 2500, tested on the first board; setup mode off by default.
+- Display: larger text (11 px), the title in the top 16 px (the yellow band of two-colour OLEDs),
+  long names shortened with "…" so the state on the right stays readable. Same layout in the
+  `planch-card` (version 1.2).
 
 ### Documentation
 

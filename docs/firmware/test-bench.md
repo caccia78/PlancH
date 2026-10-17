@@ -52,7 +52,7 @@ Touch), two text sensors with what the display and the 13 LEDs would show (**Scr
    configuration (next to `configuration.yaml`), so that you have `www/planch/planch-card.js`.
    If the `www` folder did not exist, restart Home Assistant once.
 2. **Settings → Dashboards → ⋮ → Resources → Add resource**: URL
-   `/local/planch/planch-card.js?v=1.1`, type **JavaScript module**. (No Resources menu? Turn on
+   `/local/planch/planch-card.js?v=1.2`, type **JavaScript module**. (No Resources menu? Turn on
    *Advanced mode* in your user profile.)
 3. Reload the browser page.
 

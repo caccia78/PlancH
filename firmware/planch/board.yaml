@@ -45,14 +45,15 @@ i2c:
 
 font:
   - file: "gfonts://Roboto"
-    id: font_small
-    size: 10
+    id: font_row
+    size: 11
   - file: "gfonts://Roboto@500"
     id: font_title
     size: 10
 
-# Title on the first row, then up to 4 rows: name on the left, state on the right,
-# the selected row inverted
+# Title in rows 0-15 (the yellow band of two-colour modules), then up to 4 rows of 12 px in rows
+# 16-63: name on the left, state on the right, the selected row inverted. A long text is shortened
+# with "…": the state takes up to half the row, the name gets the rest
 display:
   - platform: ssd1306_i2c
     model: "SSD1306 128x64"
@@ -62,16 +63,34 @@ display:
     lambda: |-
       auto &m = planch::menu();
       if (!m.screen_on()) return;
-      it.print(0, 0, id(font_title), m.title().c_str());
-      it.line(0, 12, 127, 12);
+      // Width of a text in pixels, and the same text shortened to w pixels with "…"
+      auto width = [&](const std::string &t, display::BaseFont *f) {
+        int x1, y1, w, h;
+        it.get_text_bounds(0, 0, t.c_str(), f, TextAlign::TOP_LEFT, &x1, &y1, &w, &h);
+        return t.empty() ? 0 : w;
+      };
+      auto fit = [&](std::string t, display::BaseFont *f, int w) {
+        if (width(t, f) <= w) return t;
+        while (!t.empty()) {
+          while (!t.empty() && (t.back() & 0xC0) == 0x80) t.pop_back();   // whole UTF-8 characters
+          if (!t.empty()) t.pop_back();
+          while (!t.empty() && t.back() == ' ') t.pop_back();
+          if (width(t + "…", f) <= w) return t + "…";
+        }
+        return std::string("…");
+      };
+      it.print(0, 7, id(font_title), TextAlign::CENTER_LEFT, fit(m.title(), id(font_title), 128).c_str());
       auto rows = m.rows();
       for (int i = 0; i < (int) rows.size(); i++) {
-        int y = 14 + i * 12;
+        int y = 16 + i * 12;
         bool sel = i == m.selected();
         if (sel) it.filled_rectangle(0, y, 128, 12);
         auto colour = sel ? COLOR_OFF : COLOR_ON;
-        it.print(2, y, id(font_small), colour, rows[i].left.c_str());
-        it.print(126, y, id(font_small), colour, TextAlign::TOP_RIGHT, rows[i].right.c_str());
+        std::string right = fit(rows[i].right, id(font_row), 62);
+        int rw = width(right, id(font_row));
+        it.print(126, y + 6, id(font_row), colour, TextAlign::CENTER_RIGHT, right.c_str());
+        it.print(2, y + 6, id(font_row), colour, TextAlign::CENTER_LEFT,
+                 fit(rows[i].left, id(font_row), 126 - rw - 6).c_str());
       }
 
 esp32_touch:

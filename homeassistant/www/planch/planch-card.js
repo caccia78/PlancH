@@ -5,7 +5,7 @@
  * Made for the test bench firmware (firmware/planch-test.yaml), which publishes both sensors.
  *
  * Install: copy the folder planch/ (this file and the two .webp pictures) to /config/www/,
- * add the resource /local/planch/planch-card.js?v=1.1 (JavaScript module) under
+ * add the resource /local/planch/planch-card.js?v=1.2 (JavaScript module) under
  * Settings > Dashboards > Resources (change ?v= after every update: browsers cache it hard),
  * then add a card:
  *
@@ -20,7 +20,7 @@
  * left of the main body; the ear goes to Y = -8. The pictures are 10 px per mm, 120 x 52 mm.
  */
 
-const VERSION = "1.1";   // also in the resource URL: /local/planch/planch-card.js?v=1.1
+const VERSION = "1.2";   // also in the resource URL: /local/planch/planch-card.js?v=1.2
 console.info(`%c PLANCH-CARD %c ${VERSION} `, "color:#fff;background:#ff7043;font-weight:600",
              "color:#ff7043;background:#26262a");
 
@@ -252,23 +252,36 @@ class PlanchCard extends HTMLElement {
     ctx.fillRect(0, 0, OLED.px, OLED.py);
     const s = screen(text);
     if (!s) return;
-    ctx.textBaseline = "top";
+    // Same layout as the firmware (planch/board.yaml): title in rows 0-15, 4 rows of 12 px below,
+    // long text shortened with "…", the state up to half the row
+    const fit = (t, w) => {
+      if (ctx.measureText(t).width <= w) return t;
+      const chars = Array.from(t);
+      while (chars.length) {
+        chars.pop();
+        const c = chars.join("").trimEnd() + "…";
+        if (ctx.measureText(c).width <= w) return c;
+      }
+      return "…";
+    };
+    ctx.textBaseline = "middle";
     ctx.fillStyle = "#fff";
     ctx.font = "500 10px Roboto, Arial, sans-serif";
-    ctx.fillText(s.title, 0, 1, 127);
-    ctx.fillRect(0, 12, 128, 1);
-    ctx.font = "10px Roboto, Arial, sans-serif";
+    ctx.fillText(fit(s.title, 128), 0, 8);
+    ctx.font = "11px Roboto, Arial, sans-serif";
     s.rows.slice(0, 4).forEach((r, i) => {
-      const y = 14 + i * 12;
+      const y = 16 + i * 12;
       if (r.sel) {
         ctx.fillStyle = "#fff";
         ctx.fillRect(0, y, 128, 12);
       }
       ctx.fillStyle = r.sel ? "#000" : "#fff";
-      ctx.textAlign = "left";
-      ctx.fillText(r.left, 2, y + 1, 90);
+      const right = fit(r.right, 62);
+      const rw = right ? ctx.measureText(right).width : 0;
       ctx.textAlign = "right";
-      ctx.fillText(r.right, 126, y + 1);
+      ctx.fillText(right, 126, y + 6.5);
+      ctx.textAlign = "left";
+      ctx.fillText(fit(r.left, 126 - rw - 6), 2, y + 6.5);
     });
     ctx.textAlign = "left";
   }
