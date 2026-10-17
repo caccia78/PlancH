@@ -5,6 +5,7 @@
 // Outside the arcade every key goes to the menu, as before.
 #pragma once
 
+#include "echo.h"
 #include "game.h"
 #include "invaders.h"
 #include "menu.h"
@@ -17,7 +18,7 @@ class Arcade : public Bitmap {
  public:
   static constexpr uint32_t HOLD_MS = 3000;   // OK + Back to open, Back to leave
   static constexpr uint32_t IDLE_MS = 60000;  // no keys outside a match: back to the menu
-  static constexpr int GAMES = 1;
+  static constexpr int GAMES = 2;
 
   void enable() { enabled_ = true; }
   bool active() const { return mode_ != OFF; }
@@ -142,8 +143,10 @@ class Arcade : public Bitmap {
     }
   }
 
+  // Order of the list; the best scores are kept by position: add new games at the end
   Invaders invaders_;
-  Game *games_[GAMES] = {&invaders_};
+  Echo echo_;
+  Game *games_[GAMES] = {&invaders_, &echo_};
   Mode mode_ = OFF;
   bool enabled_ = false;
   bool held_[TOUCH + 1] = {};
