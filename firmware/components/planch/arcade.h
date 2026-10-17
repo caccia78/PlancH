@@ -5,6 +5,7 @@
 // Outside the arcade every key goes to the menu, as before.
 #pragma once
 
+#include "dash.h"
 #include "echo.h"
 #include "game.h"
 #include "invaders.h"
@@ -19,7 +20,7 @@ class Arcade : public Bitmap {
  public:
   static constexpr uint32_t HOLD_MS = 3000;   // OK + Back to open, Back to leave
   static constexpr uint32_t IDLE_MS = 60000;  // no keys outside a match: back to the menu
-  static constexpr int GAMES = 3;
+  static constexpr int GAMES = 4;
 
   void enable() { enabled_ = true; }
   bool active() const { return mode_ != OFF; }
@@ -148,7 +149,8 @@ class Arcade : public Bitmap {
   Invaders invaders_;
   Echo echo_;
   Reflex reflex_;
-  Game *games_[GAMES] = {&invaders_, &echo_, &reflex_};
+  Dash dash_;
+  Game *games_[GAMES] = {&invaders_, &echo_, &reflex_, &dash_};
   Mode mode_ = OFF;
   bool enabled_ = false;
   bool held_[TOUCH + 1] = {};
