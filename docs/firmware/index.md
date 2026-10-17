@@ -156,8 +156,8 @@ scene keys work with the display off too.
 | --- | --- |
 | D1 (ear, left) | Off when everything is fine. Red: no connection to Home Assistant. Amber: menu missing, empty or over the limits. Short red flash: a command failed |
 | D2, D3 (ear) | Free: two RGB lights in Home Assistant, **Status LED 2** and **Status LED 3**, for your automations |
-| D4–D7 (scene keys) | On with the display, and for 5 seconds after a scene key. Full on the **active scene**, dim on the other assigned keys. After a press: green if Home Assistant confirms, red on error |
-| D8–D13 (backlight) | The RGB light **Backlight** in Home Assistant |
+| D4–D7 (scene keys) | On with the display, and for 5 seconds after a scene key. Full on the **active scene**, dim on the other assigned keys. After a press: green if Home Assistant confirms, red on error. Brightness: **Scene LED active** and **Scene LED idle** below |
+| D8–D13 (backlight) | The RGB light **Backlight** in Home Assistant; it can turn off by itself, see **Backlight off** below |
 
 LED brightness is limited to 40% in the firmware to keep the USB current low.
 
@@ -170,6 +170,9 @@ LED brightness is limited to 40% in the firmware to keep the USB current low.
 | Touch | Binary sensor | Capacitive area on the ear, wakes the display |
 | Status LED 2, Status LED 3 | Light (RGB) | D2 and D3 on the ear |
 | Backlight | Light (RGB) | D8–D13, towards the desk (or the wall) |
+| Scene LED active | Number (%) | On the panel's device page, 5–100 % (default 100): the active scene, a key waiting for Home Assistant and the green or red flash |
+| Scene LED idle | Number (%) | 0–50 % of the full colour (default 10): the other assigned scene keys; 0 turns them off |
+| Backlight off | Select | On the panel's device page: **Never** (default), **With the screen** (after 30 s without keys), **After 5 min**, **After 15 min**, **After 1 h** without keys. Only the LEDs turn off: the Backlight light stays on, and the next key or touch brings them back |
 
 ## Calibrating the touch area
 

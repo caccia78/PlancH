@@ -53,7 +53,8 @@ Each room can also show its **temperature and humidity**: put the label **PlancH
 panel's own label) on a temperature or humidity sensor, or on a device that only has sensors (a
 thermometer). The sensors of a labelled light, plug, cover or thermostat do not count: many relays
 and bulbs report their own internal temperature. The package reads, for each room in the menu, the labelled sensors of that area; if there
-are several of the same type it uses the first by entity id. The temperature appears next to each
+are several of the same type it uses the first by entity id. A sensor in °C or °F without a device
+class (common with MQTT) also counts as temperature; humidity needs the humidity device class. The temperature appears next to each
 room in the room list, temperature and humidity next to the title inside a room. A room without
 labelled sensors (and "Other") simply shows none.
 

@@ -41,11 +41,58 @@ text:
           planch::menu().set_menus(id(ha_menu).state);   // menus already received: pick again
           planch::menu().set_scenes(id(ha_scenes).state);
 
+# Automatic off of the backlight LEDs D8-D13 (the Backlight light keeps its state; keys and touch
+# bring them back). Kept in the panel's memory.
+select:
+  - platform: template
+    id: backlight_off
+    name: "Backlight off"
+    icon: mdi:lightbulb-off-outline
+    entity_category: config
+    options: ["Never", "With the screen", "After 5 min", "After 15 min", "After 1 h"]
+    initial_option: "Never"
+    optimistic: true
+    restore_value: true
+    on_value:
+      - lambda: |-
+          static const int32_t ms[] = {0, -1, 5 * 60000, 15 * 60000, 60 * 60000};
+          planch::menu().set_backlight_off(i < 5 ? ms[i] : 0);
+
+# Brightness of the scene LEDs D4-D7: active scene (and the green or red flash after a key), and
+# the other assigned keys as a share of the full colour. Kept in the panel's memory.
+number:
+  - platform: template
+    id: scene_led_active
+    name: "Scene LED active"
+    icon: mdi:brightness-7
+    entity_category: config
+    unit_of_measurement: "%"
+    mode: slider
+    min_value: 5
+    max_value: 100
+    step: 5
+    initial_value: 100
+    optimistic: true
+    restore_value: true
+    on_value:
+      - lambda: planch::menu().set_scene_active(x / 100.0f);
+  - platform: template
+    id: scene_led_idle
+    name: "Scene LED idle"
+    icon: mdi:brightness-5
+    entity_category: config
+    unit_of_measurement: "%"
+    mode: slider
+    min_value: 0
+    max_value: 50
+    step: 1
+    initial_value: 10
+    optimistic: true
+    restore_value: true
+    on_value:
+      - lambda: planch::menu().set_scene_idle(x / 100.0f);
+
 api:
-  on_client_connected:
-    - lambda: planch::menu().set_connected(true);
-  on_client_disconnected:
-    - lambda: planch::menu().set_connected(false);
 
 text_sensor:
   # Menus built by Home Assistant, one per panel: rooms, types, devices with their state (JSON);
@@ -241,6 +288,16 @@ interval:
   - interval: 1s
     then:
       - lambda: planch::menu().tick(millis());
+      # Link to Home Assistant (D1): a client subscribed to the states. Log viewers (Device Builder,
+      # esphome logs) are API clients too: their disconnection must not count as losing Home Assistant
+      - if:
+          condition:
+            api.connected:
+              state_subscription_only: true
+          then:
+            - lambda: planch::menu().set_connected(true);
+          else:
+            - lambda: planch::menu().set_connected(false);
 
 # Backlight D8-D13 and status LEDs D2, D3: RGB lights in Home Assistant whose channels feed the
 # LED effect

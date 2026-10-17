@@ -11,7 +11,8 @@
 #   area (room) and by type; no area -> "Other".
 # - Put the label "PlancH" (or "PlancH Studio") also on temperature and humidity sensors, or on
 #   a device with sensors only (a thermometer): the panel shows the room temperature and humidity
-#   next to the room (one sensor per type: the first by entity id). The sensors of a labelled
+#   next to the room (one sensor per type: the first by entity id; a sensor in °C or °F without
+#   device class counts as temperature). The sensors of a labelled
 #   light, plug, cover or thermostat do not count (a relay reports its own internal temperature).
 #   Rooms without labelled sensors show nothing.
 # - Several panels: give each one a name in the field "Panel" on its device page (for example
@@ -157,7 +158,9 @@ template:
               {%- if devs | count > 0 %}
                 {%- set nc = namespace(t=[], h=[]) %}
                 {%- for x in sensors if a != 'Other' and area_name(x) == a %}
+                  {#- temperature also without device class, from the unit (MQTT sensors often have none) #}
                   {%- set dc = state_attr(x, 'device_class') %}
+                  {%- if dc is none and state_attr(x, 'unit_of_measurement') in ['°C', '°F'] %}{% set dc = 'temperature' %}{% endif %}
                   {%- if dc == 'temperature' and states(x) | is_number %}{% set nc.t = nc.t + [states(x) | float] %}{% endif %}
                   {%- if dc == 'humidity' and states(x) | is_number %}{% set nc.h = nc.h + [states(x) | float] %}{% endif %}
                 {%- endfor %}
