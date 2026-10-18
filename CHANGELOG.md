@@ -51,7 +51,8 @@ the back of the board.
   long names shortened with "…" so the state on the right stays readable. Same layout in the
   `planch-card` (version 1.2).
 
-- Clock on the Scene 4 key: day, date, time, room and outdoor temperature, in English or Italian
+- Clock on the Scene 4 key: day, date, time, room and outdoor temperature, today's weather icon
+  with min and max, in English or Italian
   (settings **Scene 4 key** and **Language**); the package finds each panel's room by itself.
 - PlancH Arcade: four hidden games (Invaders, Echo, Reflex, Dash), opened by holding OK and Back
   for 3 s, with a best score each kept in the panel's memory.

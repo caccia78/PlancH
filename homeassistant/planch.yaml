@@ -59,6 +59,39 @@ automation:
           entity_id: sensor.planch_menu
 
 template:
+  # Today's forecast of every weather entity, for the clock: weather entities no longer carry the
+  # forecast, it comes from the action weather.get_forecasts. Every 30 minutes and at start.
+  # Attribute "daily": {"weather.home": {"c": condition, "x": max, "n": min}, ...}
+  - triggers:
+      - trigger: time_pattern
+        minutes: "/30"
+      - trigger: homeassistant
+        event: start
+      - trigger: event
+        event_type: event_template_reloaded
+    actions:
+      - action: weather.get_forecasts
+        target:
+          entity_id: "{{ states.weather | map(attribute='entity_id') | list }}"
+        data:
+          type: daily
+        response_variable: fc
+        continue_on_error: true
+    sensor:
+      - name: "PlancH forecast"
+        unique_id: planch_forecast
+        icon: mdi:weather-partly-cloudy
+        state: "{{ now().isoformat() }}"
+        attributes:
+          daily: >-
+            {%- set ns = namespace(p=[]) %}
+            {%- if fc is defined and fc is mapping %}
+              {%- for e, v in fc.items() if v.forecast %}
+                {%- set f = v.forecast[0] %}
+                {%- set ns.p = ns.p + [(e, {'c': f.condition, 'x': f.temperature, 'n': f.templow})] %}
+              {%- endfor %}
+            {%- endif %}
+            {{ dict(ns.p) }}
   - sensor:
       - name: "PlancH menu"
         unique_id: planch_menu
@@ -180,7 +213,8 @@ template:
           # Clock of each panel (Scene 4 key): {"": {...}, "studio": {...}}, one entry per PlancH found
           # among the ESPHome devices (model planch or planch-test), keyed by its field "Panel":
           # {"a": area of the panel, "t": temperature, "h": humidity of that area (labelled sensors, as
-          # in the menu), "o": outdoor temperature (first weather entity with the label)}
+          # in the menu), "o": outdoor temperature (first weather entity with the label), "c": today's
+          # condition, "x" / "n": today's max and min (sensor PlancH forecast)}
           clocks: >-
             {%- set out = namespace(c=[]) %}
             {%- for p in integration_entities('esphome') | select('match', 'text\.') | sort
@@ -214,6 +248,17 @@ template:
                 {%- set wx = sens | select('match', 'weather\.') | list %}
                 {%- if wx and state_attr(wx[0], 'temperature') is number %}
                   {%- set c = dict(c, o=state_attr(wx[0], 'temperature') | round(1)) %}
+                {%- endif %}
+                {#- today's forecast (sensor PlancH forecast), or the current condition #}
+                {%- if wx %}
+                  {%- set fd = (state_attr('sensor.planch_forecast', 'daily') or {}).get(wx[0]) %}
+                  {%- if fd %}
+                    {%- set c = dict(c, c=fd.c) %}
+                    {%- if fd.x is number %}{% set c = dict(c, x=fd.x | round(0) | int) %}{% endif %}
+                    {%- if fd.n is number %}{% set c = dict(c, n=fd.n | round(0) | int) %}{% endif %}
+                  {%- elif states(wx[0]) not in ['unknown', 'unavailable'] %}
+                    {%- set c = dict(c, c=states(wx[0])) %}
+                  {%- endif %}
                 {%- endif %}
                 {%- set out.c = out.c + [(key, c)] %}
               {%- endif %}

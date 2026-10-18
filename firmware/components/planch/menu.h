@@ -196,16 +196,21 @@ class Menu {
 
   // ---- clock (Scene 4 key) ---------------------------------------------------------------------
   // Attribute "clocks": {"": {...}, "studio": {...}} with "a" area of the panel, "t" temperature,
-  // "h" humidity of that area, "o" outdoor temperature
+  // "h" humidity of that area, "o" outdoor temperature, "c" today's weather condition (Home
+  // Assistant name, for the icon), "x" / "n" today's max and min
   void set_clocks(const std::string &json) {
     JsonDocument doc;
-    clock_in_ = clock_hum_ = clock_out_ = NAN;
+    clock_in_ = clock_hum_ = clock_out_ = clock_max_ = clock_min_ = NAN;
     clock_area_.clear();
+    clock_cond_.clear();
     if (!pick_(json, doc)) return;
     clock_area_ = doc["a"] | "";
     if (!doc["t"].isNull()) clock_in_ = doc["t"].as<float>();
     if (!doc["h"].isNull()) clock_hum_ = doc["h"].as<float>();
     if (!doc["o"].isNull()) clock_out_ = doc["o"].as<float>();
+    clock_cond_ = doc["c"] | "";
+    if (!doc["x"].isNull()) clock_max_ = doc["x"].as<float>();
+    if (!doc["n"].isNull()) clock_min_ = doc["n"].as<float>();
   }
   // Scene 4 opens and closes the clock instead of running a scene (setting "Scene 4 key")
   void set_clock_key(bool on) {
@@ -314,6 +319,13 @@ class Menu {
   std::string clock_in() const { return std::isnan(clock_in_) ? "--" : fmt_(clock_in_, "%.1f°"); }
   std::string clock_hum() const { return std::isnan(clock_hum_) ? "" : fmt_(clock_hum_, "%.0f%%"); }
   std::string clock_out() const { return std::isnan(clock_out_) ? "--" : fmt_(clock_out_, "%.1f°"); }
+  // Outdoor temperature without decimals (next to the weather icon), today's condition and "min/max°"
+  std::string clock_out_short() const { return std::isnan(clock_out_) ? "--" : fmt_(clock_out_, "%.0f°"); }
+  const std::string &clock_condition() const { return clock_cond_; }
+  std::string clock_minmax() const {
+    if (std::isnan(clock_min_) || std::isnan(clock_max_)) return "";
+    return fmt_(clock_min_, "%.0f") + "/" + fmt_(clock_max_, "%.0f°");
+  }
   const char *clock_in_label() const { return lang_ ? "Casa" : "In"; }
   const char *clock_out_label() const { return lang_ ? "Fuori" : "Out"; }
   // Automatic off of the backlight LEDs: 0 never, -1 with the screen, otherwise ms without keys.
@@ -414,8 +426,8 @@ class Menu {
   Level level_ = ROOMS;
   bool clock_key_ = true, clock_ = false, time_ok_ = false;
   int lang_ = 0, wday_ = 1, mday_ = 1, month_ = 1, hour_ = 0, minute_ = 0;
-  float clock_in_ = NAN, clock_hum_ = NAN, clock_out_ = NAN;
-  std::string clock_area_;
+  float clock_in_ = NAN, clock_hum_ = NAN, clock_out_ = NAN, clock_max_ = NAN, clock_min_ = NAN;
+  std::string clock_area_, clock_cond_;
   int cursor_[3] = {0, 0, 0};  // rooms, types, devices
   std::string sel_room_, sel_entity_;
   char sel_type_ = 0;
@@ -743,7 +755,8 @@ class Menu {
       std::string in = clock_in(), h = clock_hum();
       s.rows = {{lang_ ? "Ora" : "Time", clock_time()},
                 {std::string(clock_in_label()) + (clock_area_.empty() ? "" : " (" + clock_area_ + ")"), h.empty() ? in : in + " " + h},
-                {clock_out_label(), clock_out()}};
+                {clock_out_label(), clock_out() + (clock_cond_.empty() ? "" : " " + clock_cond_) +
+                                        (clock_minmax().empty() ? "" : " " + clock_minmax())}};
       return s;
     }
     if (!valid_) {

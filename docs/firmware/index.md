@@ -152,8 +152,8 @@ scene keys work with the display off too.
 
 ### Clock
 
-**Scene 4** opens a small dashboard: day and date, the time, the temperature of the panel's room
-and outdoors. It stays on until you leave it with Scene 4 again, the touch area or any of the
+**Scene 4** opens a small dashboard: day and date, the time, the temperature of the panel's room,
+the outdoor temperature with an icon of today's weather and today's min and max. It stays on until you leave it with Scene 4 again, the touch area or any of the
 arrows, OK and Back (that key only closes the clock); Scene 1–3 still run their scenes. To avoid
 marks on the OLED it moves by a couple of pixels every minute and dims from 23:00 to 7:00.
 

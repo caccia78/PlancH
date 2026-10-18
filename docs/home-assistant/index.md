@@ -100,7 +100,8 @@ it runs). When you press a key, its LED turns green if Home Assistant confirms, 
 The clock of the panel (Scene 4) shows the temperature and humidity of the panel's own room: the
 area of the PlancH device in Home Assistant, with the labelled sensors described above. For the
 outdoor temperature put the label **PlancH** on a weather entity, for example `weather.home` of
-the Met.no integration. With more panels, give each one a name (**Panel** field): two panels
+the Met.no integration: today's forecast (icon, min and max) comes from the same entity, read every
+30 minutes by the sensor **PlancH forecast** of the package. With more panels, give each one a name (**Panel** field): two panels
 without a name share the room of the first one.
 
 ## Colours
