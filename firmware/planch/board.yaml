@@ -78,27 +78,34 @@ display:
       }
       auto &m = planch::menu();
       if (!m.screen_on()) return;
-      // Clock (Scene 4): day and date in the yellow band, the time on the left, the temperatures
-      // of the room and outdoors on the right. Moved by up to 2 px every minute against burn-in
+      // Clock (Scene 4): day and date in the yellow band; the time on the left and the room on the
+      // right (house, temperature, humidity), divided by a vertical bar; under a horizontal line
+      // today's weather icon with min/max and the outdoor temperature. Moved by up to 2 px every
+      // minute against burn-in
       if (m.clock_on()) {
         int dx = m.clock_minute() % 3, dy = (m.clock_minute() / 3) % 2;
-        it.print(dx, 7, id(font_title), TextAlign::CENTER_LEFT, m.clock_day().c_str());
-        it.print(125 + dx, 7, id(font_title), TextAlign::CENTER_RIGHT, m.clock_date().c_str());
-        it.print(dx, 40 + dy, id(font_clock), TextAlign::CENTER_LEFT, m.clock_time().c_str());
-        it.line(79 + dx, 20 + dy, 79 + dx, 60 + dy);
-        // Right: the room (house icon) and outdoors (today's weather icon) with their temperatures,
-        // today's min/max under them; without a forecast a thermometer instead of the weather icon
         auto icon = [&](const uint16_t *rows, int x0, int y0) {
           for (int y = 0; y < 15; y++)
             for (int x = 0; x < 15; x++)
               if (rows[y] & (0x4000 >> x)) it.draw_pixel_at(x0 + x, y0 + y, COLOR_ON);
         };
-        icon(planch::weather_icon("home"), 82 + dx, 18 + dy);
-        it.print(127, 26 + dy, id(font_title), TextAlign::CENTER_RIGHT, m.clock_in().c_str());
+        it.print(dx, 7, id(font_title), TextAlign::CENTER_LEFT, m.clock_day().c_str());
+        it.print(125 + dx, 7, id(font_title), TextAlign::CENTER_RIGHT, m.clock_date().c_str());
+        it.print(dx, 29 + dy, id(font_clock), TextAlign::CENTER_LEFT, m.clock_time().c_str());
+        it.line(79 + dx, 18 + dy, 79 + dx, 40 + dy);
+        icon(planch::weather_icon("home"), 82 + dx, 17 + dy);
+        it.print(127, 24 + dy, id(font_title), TextAlign::CENTER_RIGHT, m.clock_in().c_str());
+        it.print(127, 37 + dy, id(font_title), TextAlign::CENTER_RIGHT, m.clock_hum().c_str());
+        it.line(0, 43 + dy, 127, 43 + dy);
         const uint16_t *wx = planch::weather_icon(m.clock_condition().c_str());
-        icon(wx ? wx : planch::weather_icon("thermometer"), 82 + dx, 35 + dy);
-        it.print(127, 43 + dy, id(font_title), TextAlign::CENTER_RIGHT, m.clock_out_short().c_str());
-        it.print(103 + dx, 58 + dy, id(font_title), TextAlign::CENTER, m.clock_minmax().c_str());
+        int x = dx;
+        if (wx) {
+          icon(wx, x, 47 + dy);
+          x += 18;
+        }
+        it.print(x, 55 + dy, id(font_title), TextAlign::CENTER_LEFT, m.clock_minmax().c_str());
+        it.print(125 + dx, 55 + dy, id(font_title), TextAlign::CENTER_RIGHT,
+                 (std::string(m.clock_out_label()) + " " + m.clock_out()).c_str());
         return;
       }
       // Width of a text in pixels, and the same text shortened to w pixels with "…"
