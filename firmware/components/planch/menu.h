@@ -247,6 +247,10 @@ class Menu {
   std::vector<Call> key(Key k, uint32_t now) {
     std::vector<Call> calls;
     last_input_ = now;
+    if (clock_ && !screen_on_ && !(k >= S1 && k <= S3)) {  // the clock went dark: wake it
+      screen_on_ = true;
+      return calls;
+    }
     if (clock_key_ && k == S4) {  // Scene 4 opens and closes the clock
       clock_ = !clock_;
       screen_on_ = true;
@@ -283,8 +287,9 @@ class Menu {
   }
 
   void tick(uint32_t now) {
-    if (screen_on_ && !clock_ && now - last_input_ > TIMEOUT_MS) {  // the clock stays on
+    if (screen_on_ && now - last_input_ > TIMEOUT_MS) {
       screen_on_ = false;
+      if (clock_) return;  // the clock stays chosen: the next key shows it again
       level_ = ROOMS;  // next wake starts from the rooms
       cursor_[ROOMS] = 0;
     }

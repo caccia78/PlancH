@@ -153,9 +153,11 @@ scene keys work with the display off too.
 ### Clock
 
 **Scene 4** opens a small dashboard: day and date, the time, the temperature of the panel's room,
-the outdoor temperature with an icon of today's weather and today's min and max. It stays on until you leave it with Scene 4 again, the touch area or any of the
-arrows, OK and Back (that key only closes the clock); Scene 1–3 still run their scenes. To avoid
-marks on the OLED it moves by a couple of pixels every minute and dims from 23:00 to 7:00.
+the outdoor temperature with an icon of today's weather and today's min and max. Leave it with Scene 4 again, the touch area or any of the arrows, OK and
+Back (that key only closes the clock); Scene 1–3 still run their scenes. Like the menu, the screen
+turns off after 30 s without keys; the clock stays chosen, and the next key or touch shows it again
+without closing it. To avoid marks on the OLED it moves by a couple of pixels every minute and dims
+from 23:00 to 7:00.
 
 The room is the area of the panel's device in Home Assistant, with its labelled temperature and
 humidity sensors; outdoors is a weather entity with the label PlancH (see
