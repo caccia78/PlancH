@@ -22,6 +22,9 @@
 # - Put the labels "PlancH S1" ... "PlancH S4" on the scene, script or automation for each scene
 #   key (one entity per label); "PlancH Studio S1" ... apply to the panel Studio only and win
 #   over the shared ones.
+# - Clock (Scene 4 key, or a setting on the panel's page): date, time, temperature and humidity of
+#   the panel's own area (its device area in Home Assistant, labelled sensors as above) and the
+#   outdoor temperature from a weather entity with the label "PlancH" (for example weather.home).
 # - In the ESPHome integration options of the panel enable
 #   "Allow the device to perform Home Assistant actions".
 #
@@ -174,6 +177,48 @@ template:
             {%- set out.menus = out.menus + [(key, {'r': ns.rooms, 'w': 1 if ns.cut else 0})] %}
             {%- endfor %}
             {{ 'planch1:' ~ (dict(out.menus) | to_json) }}
+          # Clock of each panel (Scene 4 key): {"": {...}, "studio": {...}}, one entry per PlancH found
+          # among the ESPHome devices (model planch or planch-test), keyed by its field "Panel":
+          # {"a": area of the panel, "t": temperature, "h": humidity of that area (labelled sensors, as
+          # in the menu), "o": outdoor temperature (first weather entity with the label)}
+          clocks: >-
+            {%- set out = namespace(c=[]) %}
+            {%- for p in integration_entities('esphome') | select('match', 'text\.') | sort
+                  if device_attr(device_id(p), 'model') in ['planch', 'planch-test']
+                  and (state_attr(p, 'friendly_name') or '') is search('Panel$') %}
+              {%- set key = states(p) | trim | lower %}
+              {%- set key = '' if key in ['unknown', 'unavailable'] else key %}
+              {%- if key not in out.c | map(attribute='0') | list %}
+                {%- set a = area_name(device_id(p)) or '' %}
+                {%- set ns = namespace(sens=[]) %}
+                {%- for l in ['PlancH', 'PlancH ' ~ key] if l == 'PlancH' or key %}
+                  {%- set ns.sens = ns.sens + label_entities(l) %}
+                  {%- for d in label_devices(l) %}
+                    {%- set de = device_entities(d) %}
+                    {%- if de | select('match', '(light|switch|cover|climate)\.') | list | count == 0 %}
+                      {%- set ns.sens = ns.sens + de %}
+                    {%- endif %}
+                  {%- endfor %}
+                {%- endfor %}
+                {%- set sens = ns.sens | unique | sort | list %}
+                {%- set nc = namespace(t=[], h=[]) %}
+                {%- for x in sens | select('match', 'sensor\.') if a and area_name(x) == a %}
+                  {%- set dc = state_attr(x, 'device_class') %}
+                  {%- if dc is none and state_attr(x, 'unit_of_measurement') in ['°C', '°F'] %}{% set dc = 'temperature' %}{% endif %}
+                  {%- if dc == 'temperature' and states(x) | is_number %}{% set nc.t = nc.t + [states(x) | float] %}{% endif %}
+                  {%- if dc == 'humidity' and states(x) | is_number %}{% set nc.h = nc.h + [states(x) | float] %}{% endif %}
+                {%- endfor %}
+                {%- set c = {'a': a[:16]} %}
+                {%- if nc.t %}{% set c = dict(c, t=nc.t | first | round(1)) %}{% endif %}
+                {%- if nc.h %}{% set c = dict(c, h=nc.h | first | round(0) | int) %}{% endif %}
+                {%- set wx = sens | select('match', 'weather\.') | list %}
+                {%- if wx and state_attr(wx[0], 'temperature') is number %}
+                  {%- set c = dict(c, o=state_attr(wx[0], 'temperature') | round(1)) %}
+                {%- endif %}
+                {%- set out.c = out.c + [(key, c)] %}
+              {%- endif %}
+            {%- endfor %}
+            {{ 'planch1:' ~ (dict(out.c) | to_json) }}
           # Colours of the Colour row on the panel, in this order: [name, hue 0-360, saturation 0-100].
           # Change them as you like (names up to 10 characters).
           palette: >-

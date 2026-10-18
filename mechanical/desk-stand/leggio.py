@@ -43,6 +43,9 @@ GOMMINO_D, GOMMINO_H = 10.4, 1.0
 
 PIEDI_SPEC = [(11, 17.75), (28, 6), (28, 38), (64, 7), (98, 22), (114, 38)]
 GOMMINI_SPEC = [(8, 12), (30, 40), (95, 5), (113, 40)]
+# Settimo appoggio, stampato: battuta tra Su e Destra, dove il retro è libero; senza, premendo
+# Su o Destra la scheda si ribalta sui piedini (Su e Destra restano fuori dai sei appoggi)
+BATTUTA_SPEC, BATTUTA_D, BATTUTA_RIBASSO = (103.5, 5.5), 6.0, 0.2
 
 _D10 = (11.5 / math.hypot(11.5, 12.5), -12.5 / math.hypot(11.5, 12.5))  # D10 dal centro ghiera (98, 22)
 FESSURE_SPEC = [  # (punto sul bordo in coord. SPEC, normale uscente in coord. SPEC)
@@ -92,6 +95,12 @@ def luci_fessure(piedini):
     return pannelli
 
 
+def battuta(piedini):
+    """Colonnina del settimo appoggio sul fondo del vano, poco più bassa dei piedini."""
+    return Pos(*p(*BATTUTA_SPEC), -0.01) * Cylinder(BATTUTA_D / 2, piedini - BATTUTA_RIBASSO + 0.01,
+                                                     align=(Align.CENTER, Align.CENTER, Align.MIN))
+
+
 def poligono(sagoma, passo):
     """Contorno di una sagoma piana campionato a passo costante, con normale verso +Z.
 
@@ -117,6 +126,7 @@ def costruisci(pcb=SPESSORE_PCB, piedini=PIEDINI, inclinazione=INCLINAZIONE):
     # Cornice nel suo sistema di riferimento
     cornice = Pos(0, 0, -FONDO) * extrude(esterno, FONDO + z_sommita)
     cornice -= extrude(vano, z_sommita + 1)
+    cornice += battuta(piedini)
 
     tagli = fessure_luce(piedini)
     # Apertura per l'USB-C sul bordo superiore della linguetta (Y 6)

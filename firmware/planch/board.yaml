@@ -50,6 +50,13 @@ font:
   - file: "gfonts://Roboto@500"
     id: font_title
     size: 10
+    glyphsets: [GF_Latin_Kernel]
+    glyphs: "àèéìòù"   # Italian days of the clock (lunedì)
+  # Time of the clock: digits only
+  - file: "gfonts://Roboto@500"
+    id: font_clock
+    size: 30
+    glyphs: "0123456789:-"
 
 # Title in rows 0-15 (the yellow band of two-colour modules), then up to 4 rows of 12 px in rows
 # 16-63: name on the left, state on the right, the selected row inverted. A long text is shortened
@@ -71,6 +78,21 @@ display:
       }
       auto &m = planch::menu();
       if (!m.screen_on()) return;
+      // Clock (Scene 4): day and date in the yellow band, the time on the left, the temperatures
+      // of the room and outdoors on the right. Moved by up to 2 px every minute against burn-in
+      if (m.clock_on()) {
+        int dx = m.clock_minute() % 3, dy = (m.clock_minute() / 3) % 2;
+        it.print(dx, 7, id(font_title), TextAlign::CENTER_LEFT, m.clock_day().c_str());
+        it.print(125 + dx, 7, id(font_title), TextAlign::CENTER_RIGHT, m.clock_date().c_str());
+        it.print(dx, 40 + dy, id(font_clock), TextAlign::CENTER_LEFT, m.clock_time().c_str());
+        it.line(84 + dx, 20 + dy, 84 + dx, 60 + dy);
+        int cx = 106 + dx;
+        it.print(cx, 24 + dy, id(font_row), TextAlign::CENTER, m.clock_in_label());
+        it.print(cx, 35 + dy, id(font_title), TextAlign::CENTER, m.clock_in().c_str());
+        it.print(cx, 47 + dy, id(font_row), TextAlign::CENTER, m.clock_out_label());
+        it.print(cx, 58 + dy, id(font_title), TextAlign::CENTER, m.clock_out().c_str());
+        return;
+      }
       // Width of a text in pixels, and the same text shortened to w pixels with "…"
       auto width = [&](const std::string &t, display::BaseFont *f) {
         int x1, y1, w, h;
@@ -115,6 +137,18 @@ globals:
     initial_value: "std::array<uint32_t, 8>{}"
 
 interval:
+  # Clock at night (23-7): low contrast, against burn-in and glare in a dark room
+  - interval: 1s
+    then:
+      - lambda: |-
+          auto &m = planch::menu();
+          int h = m.clock_hour();
+          float c = m.clock_on() && h >= 0 && (h >= 23 || h < 7) ? 0.05f : 1.0f;
+          static float last = 1.0f;
+          if (c != last) {
+            last = c;
+            id(oled).set_contrast(c);
+          }
   - interval: 30ms
     then:
       - lambda: |-
