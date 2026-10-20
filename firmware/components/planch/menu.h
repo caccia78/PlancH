@@ -194,6 +194,37 @@ class Menu {
 
   void set_connected(bool connected) { connected_ = connected; }
 
+  // ---- clock (Scene 4 key) ---------------------------------------------------------------------
+  // Attribute "clocks": {"": {...}, "studio": {...}} with "a" area of the panel, "t" temperature,
+  // "h" humidity of that area, "o" outdoor temperature, "c" today's weather condition (Home
+  // Assistant name, for the icon), "x" / "n" today's max and min
+  void set_clocks(const std::string &json) {
+    JsonDocument doc;
+    clock_in_ = clock_hum_ = clock_out_ = clock_max_ = clock_min_ = NAN;
+    clock_area_.clear();
+    clock_cond_.clear();
+    if (!pick_(json, doc)) return;
+    clock_area_ = doc["a"] | "";
+    if (!doc["t"].isNull()) clock_in_ = doc["t"].as<float>();
+    if (!doc["h"].isNull()) clock_hum_ = doc["h"].as<float>();
+    if (!doc["o"].isNull()) clock_out_ = doc["o"].as<float>();
+    clock_cond_ = doc["c"] | "";
+    if (!doc["x"].isNull()) clock_max_ = doc["x"].as<float>();
+    if (!doc["n"].isNull()) clock_min_ = doc["n"].as<float>();
+  }
+  // Scene 4 opens and closes the clock instead of running a scene (setting "Scene 4 key")
+  void set_clock_key(bool on) {
+    clock_key_ = on;
+    if (!on) clock_ = false;
+  }
+  // 0 English, 1 Italian (setting "Language"): names of days and months
+  void set_language(int lang) { lang_ = lang == 1 ? 1 : 0; }
+  // Local time from Home Assistant; wday 1 = Sunday, as ESPHome
+  void set_time(bool valid, int wday, int mday, int month, int hour, int minute) {
+    time_ok_ = valid && wday >= 1 && wday <= 7 && month >= 1 && month <= 12;
+    wday_ = wday, mday_ = mday, month_ = month, hour_ = hour, minute_ = minute;
+  }
+
   void set_backlight(int channel, float level) { set_(backlight_, channel, level); }
 
   // D2 (n = 0) and D3 (n = 1): status lights driven by Home Assistant automations
@@ -216,6 +247,20 @@ class Menu {
   std::vector<Call> key(Key k, uint32_t now) {
     std::vector<Call> calls;
     last_input_ = now;
+    if (clock_ && !screen_on_ && !(k >= S1 && k <= S3)) {  // the clock went dark: wake it
+      screen_on_ = true;
+      return calls;
+    }
+    if (clock_key_ && k == S4) {  // Scene 4 opens and closes the clock
+      clock_ = !clock_;
+      screen_on_ = true;
+      return calls;
+    }
+    if (clock_ && !(k >= S1 && k <= S3)) {  // any other key back to the menu (only that)
+      clock_ = false;
+      screen_on_ = true;
+      return calls;
+    }
     if (k >= S1 && k <= S4) {  // scene keys work with the screen off too
       const Scene &s = scenes_[k - S1];
       int i = k - S1;
@@ -244,6 +289,7 @@ class Menu {
   void tick(uint32_t now) {
     if (screen_on_ && now - last_input_ > TIMEOUT_MS) {
       screen_on_ = false;
+      if (clock_) return;  // the clock stays chosen: the next key shows it again
       level_ = ROOMS;  // next wake starts from the rooms
       cursor_[ROOMS] = 0;
     }
@@ -251,6 +297,42 @@ class Menu {
 
   // ---- outputs -----------------------------------------------------------------------------
   bool screen_on() const { return screen_on_; }
+  // Clock on screen, and its texts ("" when unknown)
+  bool clock_on() const { return clock_ && screen_on_; }
+  int clock_hour() const { return time_ok_ ? hour_ : -1; }
+  int clock_minute() const { return time_ok_ ? minute_ : 0; }
+  std::string clock_time() const {
+    if (!time_ok_) return "--:--";
+    char b[8];
+    snprintf(b, sizeof(b), "%02d:%02d", hour_, minute_);
+    return b;
+  }
+  std::string clock_day() const {
+    static const char *const DAYS[2][7] = {
+        {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"},
+        {"Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"}};
+    return time_ok_ ? DAYS[lang_][wday_ - 1] : "";
+  }
+  std::string clock_date() const {
+    static const char *const MONTHS[2][12] = {
+        {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
+         "November", "December"},
+        {"gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre",
+         "ottobre", "novembre", "dicembre"}};
+    return time_ok_ ? std::to_string(mday_) + " " + MONTHS[lang_][month_ - 1] : "";
+  }
+  std::string clock_in() const { return std::isnan(clock_in_) ? "--" : fmt_(clock_in_, "%.1f°"); }
+  std::string clock_hum() const { return std::isnan(clock_hum_) ? "" : fmt_(clock_hum_, "%.0f%%"); }
+  std::string clock_out() const { return std::isnan(clock_out_) ? "--" : fmt_(clock_out_, "%.1f°"); }
+  // Outdoor temperature without decimals (next to the weather icon), today's condition and "min/max°"
+  std::string clock_out_short() const { return std::isnan(clock_out_) ? "--" : fmt_(clock_out_, "%.0f°"); }
+  const std::string &clock_condition() const { return clock_cond_; }
+  std::string clock_minmax() const {
+    if (std::isnan(clock_min_) || std::isnan(clock_max_)) return "";
+    return fmt_(clock_min_, "%.0f") + "/" + fmt_(clock_max_, "%.0f°");
+  }
+  const char *clock_in_label() const { return lang_ ? "Casa" : "In"; }
+  const char *clock_out_label() const { return lang_ ? "Fuori" : "Out"; }
   // Automatic off of the backlight LEDs: 0 never, -1 with the screen, otherwise ms without keys.
   // Only the LEDs: the Backlight light keeps its state, the next key or touch brings them back
   void set_backlight_off(int32_t ms) { backlight_off_ = ms; }
@@ -300,6 +382,10 @@ class Menu {
         out[3 + i] = scale_(result_ok_[i] ? Rgb{0, 200, 0} : Rgb{200, 0, 0}, scene_active_);
         continue;
       }
+      if (i == 3 && clock_key_) {  // D7: the clock key, full while the clock is on
+        if (awake) out[6] = scale_(Rgb{120, 150, 255}, clock_ ? scene_active_ : scene_idle_);
+        continue;
+      }
       if (!awake || scenes_[i].entity.empty()) continue;
       bool pending = recent(pressed_[i], PENDING_MS) && !answered_[i];
       out[3 + i] = scale_(Rgb{255, 160, 60}, (scenes_[i].active || pending) ? scene_active_ : scene_idle_);
@@ -343,6 +429,10 @@ class Menu {
   uint32_t pressed_[4] = {0, 0, 0, 0}, result_[4] = {0, 0, 0, 0};
   bool result_ok_[4] = {false, false, false, false}, answered_[4] = {false, false, false, false};
   Level level_ = ROOMS;
+  bool clock_key_ = true, clock_ = false, time_ok_ = false;
+  int lang_ = 0, wday_ = 1, mday_ = 1, month_ = 1, hour_ = 0, minute_ = 0;
+  float clock_in_ = NAN, clock_hum_ = NAN, clock_out_ = NAN, clock_max_ = NAN, clock_min_ = NAN;
+  std::string clock_area_, clock_cond_;
   int cursor_[3] = {0, 0, 0};  // rooms, types, devices
   std::string sel_room_, sel_entity_;
   char sel_type_ = 0;
@@ -664,6 +754,16 @@ class Menu {
 
   Screen screen_() const {
     Screen s;
+    if (clock_) {
+      s.title = clock_day() + " " + clock_date();
+      s.info = clock_time();
+      std::string in = clock_in(), h = clock_hum();
+      s.rows = {{lang_ ? "Ora" : "Time", clock_time()},
+                {std::string(clock_in_label()) + (clock_area_.empty() ? "" : " (" + clock_area_ + ")"), h.empty() ? in : in + " " + h},
+                {clock_out_label(), clock_out() + (clock_cond_.empty() ? "" : " " + clock_cond_) +
+                                        (clock_minmax().empty() ? "" : " " + clock_minmax())}};
+      return s;
+    }
     if (!valid_) {
       s.title = "PlancH";
       s.rows = {{connected_ ? "Waiting for" : "Not connected", ""}, {connected_ ? "Home Assistant" : "to Home Assistant", ""}};

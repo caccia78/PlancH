@@ -84,7 +84,9 @@ name that has no label, shows the **PlancH** devices. Names are not case sensiti
 
 Create the labels **PlancH S1**, **PlancH S2**, **PlancH S3** and **PlancH S4** and put each
 one on the scene, script or automation for that key (one entity per label): a scene is turned
-on, a script is run, an automation is triggered. A key without a label does nothing.
+on, a script is run, an automation is triggered. A key without a label does nothing. Scene 4 opens
+the [clock](../firmware/index.md#clock) unless you set **Scene 4 key** to *Scene* on the panel's
+device page.
 
 With more panels, **PlancH Studio S1** … **PlancH Studio S4** set the keys of the panel Studio
 only, and win over the shared ones.
@@ -92,6 +94,15 @@ only, and win over the shared ones.
 The LED next to each key shows the **active scene**: the one activated most recently among the
 four, also when you activate it from Home Assistant or from an automation (a script also while
 it runs). When you press a key, its LED turns green if Home Assistant confirms, red on error.
+
+### Clock
+
+The clock of the panel (Scene 4) shows the temperature and humidity of the panel's own room: the
+area of the PlancH device in Home Assistant, with the labelled sensors described above. For the
+outdoor temperature put the label **PlancH** on a weather entity, for example `weather.home` of
+the Met.no integration: today's forecast (icon, min and max) comes from the same entity, read every
+30 minutes by the sensor **PlancH forecast** of the package. With more panels, give each one a name (**Panel** field): two panels
+without a name share the room of the first one.
 
 ## Colours
 

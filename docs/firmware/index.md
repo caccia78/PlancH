@@ -150,6 +150,20 @@ Strip
 The display switches off after 30 seconds without keys; the first key only wakes it up. The
 scene keys work with the display off too.
 
+### Clock
+
+**Scene 4** opens a small dashboard: day and date, the time, the temperature of the panel's room,
+the outdoor temperature with an icon of today's weather and today's min and max. Leave it with Scene 4 again, the touch area or any of the arrows, OK and
+Back (that key only closes the clock); Scene 1–3 still run their scenes. Like the menu, the screen
+turns off after 30 s without keys; the clock stays chosen, and the next key or touch shows it again
+without closing it. To avoid marks on the OLED it moves by a couple of pixels every minute and dims
+from 23:00 to 7:00.
+
+The room is the area of the panel's device in Home Assistant, with its labelled temperature and
+humidity sensors; outdoors is a weather entity with the label PlancH (see
+[Home Assistant](../home-assistant/index.md#clock)). On the panel's device page, **Scene 4 key**
+turns Scene 4 back into a scene key and **Language** shows days and months in Italian.
+
 Hold **OK** and **Back** together for 3 seconds to open the hidden games: see
 [PlancH Arcade](arcade.md).
 
@@ -159,7 +173,7 @@ Hold **OK** and **Back** together for 3 seconds to open the hidden games: see
 | --- | --- |
 | D1 (ear, left) | Off when everything is fine. Red: no connection to Home Assistant. Amber: menu missing, empty or over the limits. Short red flash: a command failed |
 | D2, D3 (ear) | Free: two RGB lights in Home Assistant, **Status LED 2** and **Status LED 3**, for your automations |
-| D4–D7 (scene keys) | On with the display, and for 5 seconds after a scene key. Full on the **active scene**, dim on the other assigned keys. After a press: green if Home Assistant confirms, red on error. Brightness: **Scene LED active** and **Scene LED idle** below |
+| D4–D7 (scene keys) | On with the display, and for 5 seconds after a scene key. Full on the **active scene**, dim on the other assigned keys. After a press: green if Home Assistant confirms, red on error. Brightness: **Scene LED active** and **Scene LED idle** below. D7 is light blue when Scene 4 opens the clock, full while the clock is on |
 | D8–D13 (backlight) | The RGB light **Backlight** in Home Assistant; it can turn off by itself, see **Backlight off** below |
 
 LED brightness is limited to 40% in the firmware to keep the USB current low.
@@ -172,8 +186,10 @@ LED brightness is limited to 40% in the firmware to keep the USB current low.
 | Panel | Text | Name of the panel, picks its devices: see [More than one PlancH](../home-assistant/index.md#more-than-one-planch) |
 | Touch | Binary sensor | Capacitive area on the ear, wakes the display |
 | Status LED 2, Status LED 3 | Light (RGB) | D2 and D3 on the ear |
-| Backlight | Light (RGB) | D8–D13, towards the desk (or the wall) |
+| Backlight | Light (RGB) | D8–D13, towards the desk (or the wall); colour, brightness and on/off are kept after a power cut |
 | Scene LED active | Number (%) | On the panel's device page, 5–100 % (default 100): the active scene, a key waiting for Home Assistant and the green or red flash |
+| Scene 4 key | Select | **Clock** (default) or **Scene** |
+| Language | Select | **English** or **Italiano**: days and months of the clock |
 | Scene LED idle | Number (%) | 0–50 % of the full colour (default 10): the other assigned scene keys; 0 turns them off |
 | Backlight off | Select | On the panel's device page: **Never** (default), **With the screen** (after 30 s without keys), **After 5 min**, **After 15 min**, **After 1 h** without keys. Only the LEDs turn off: the Backlight light stays on, and the next key or touch brings them back |
 

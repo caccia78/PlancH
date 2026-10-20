@@ -19,6 +19,11 @@ esphome:
           brightness: 100%
           effect: PlancH
 
+# Settings and the Backlight colour are kept in flash: write them 5 s after a change, not after the
+# default minute, so they survive pulling the cable soon after (they change rarely: no flash wear)
+preferences:
+  flash_write_interval: 5s
+
 # Menu model (components/planch/menu.h) and PlancH Arcade (arcade.h); also brings in ArduinoJson
 planch:
 
@@ -40,6 +45,7 @@ text:
           planch::menu().set_panel(x);
           planch::menu().set_menus(id(ha_menu).state);   // menus already received: pick again
           planch::menu().set_scenes(id(ha_scenes).state);
+          planch::menu().set_clocks(id(ha_clocks).state);
 
 # Automatic off of the backlight LEDs D8-D13 (the Backlight light keeps its state; keys and touch
 # bring them back). Kept in the panel's memory.
@@ -57,6 +63,31 @@ select:
       - lambda: |-
           static const int32_t ms[] = {0, -1, 5 * 60000, 15 * 60000, 60 * 60000};
           planch::menu().set_backlight_off(i < 5 ? ms[i] : 0);
+  # Scene 4: opens and closes the clock (date, time, room and outdoor temperature), or runs its
+  # scene like the other three. Kept in the panel's memory.
+  - platform: template
+    id: scene4_key
+    name: "Scene 4 key"
+    icon: mdi:clock-outline
+    entity_category: config
+    options: ["Clock", "Scene"]
+    initial_option: "Clock"
+    optimistic: true
+    restore_value: true
+    on_value:
+      - lambda: planch::menu().set_clock_key(i == 0);
+  # Language of the clock (names of days and months)
+  - platform: template
+    id: language
+    name: "Language"
+    icon: mdi:translate
+    entity_category: config
+    options: ["English", "Italiano"]
+    initial_option: "English"
+    optimistic: true
+    restore_value: true
+    on_value:
+      - lambda: planch::menu().set_language(i);
 
 # Brightness of the scene LEDs D4-D7: active scene (and the green or red flash after a key), and
 # the other assigned keys as a share of the full colour. Kept in the panel's memory.
@@ -94,6 +125,11 @@ number:
 
 api:
 
+# Local time of Home Assistant, for the clock
+time:
+  - platform: homeassistant
+    id: ha_time
+
 text_sensor:
   # Menus built by Home Assistant, one per panel: rooms, types, devices with their state (JSON);
   # the panel keeps only its own (field "Panel")
@@ -120,6 +156,14 @@ text_sensor:
     internal: true
     on_value:
       - lambda: planch::menu().set_scenes(x);
+  # Clock of each panel: area, its temperature and humidity, outdoor temperature (package)
+  - platform: homeassistant
+    id: ha_clocks
+    entity_id: sensor.planch_menu
+    attribute: clocks
+    internal: true
+    on_value:
+      - lambda: planch::menu().set_clocks(x);
 
 script:
   # Key pressed: code = planch::Key (UP, DOWN, LEFT, RIGHT, OK, BACK, S1..S4, TOUCH).
@@ -288,7 +332,10 @@ script:
 interval:
   - interval: 1s
     then:
-      - lambda: planch::menu().tick(millis());
+      - lambda: |-
+          auto t = id(ha_time).now();
+          planch::menu().set_time(t.is_valid(), t.day_of_week, t.day_of_month, t.month, t.hour, t.minute);
+          planch::menu().tick(millis());
       # Link to Home Assistant (D1): a client subscribed to the states. Log viewers (Device Builder,
       # esphome logs) are API clients too: their disconnection must not count as losing Home Assistant
       - if:
@@ -353,6 +400,7 @@ output:
 light:
   - platform: rgb
     name: "Backlight"
+    restore_mode: RESTORE_DEFAULT_OFF   # last colour, brightness and on/off after a power cut
     red: backlight_r
     green: backlight_g
     blue: backlight_b
