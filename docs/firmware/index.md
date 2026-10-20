@@ -186,7 +186,7 @@ LED brightness is limited to 40% in the firmware to keep the USB current low.
 | Panel | Text | Name of the panel, picks its devices: see [More than one PlancH](../home-assistant/index.md#more-than-one-planch) |
 | Touch | Binary sensor | Capacitive area on the ear, wakes the display |
 | Status LED 2, Status LED 3 | Light (RGB) | D2 and D3 on the ear |
-| Backlight | Light (RGB) | D8–D13, towards the desk (or the wall) |
+| Backlight | Light (RGB) | D8–D13, towards the desk (or the wall); colour, brightness and on/off are kept after a power cut |
 | Scene LED active | Number (%) | On the panel's device page, 5–100 % (default 100): the active scene, a key waiting for Home Assistant and the green or red flash |
 | Scene 4 key | Select | **Clock** (default) or **Scene** |
 | Language | Select | **English** or **Italiano**: days and months of the clock |

@@ -19,6 +19,11 @@ esphome:
           brightness: 100%
           effect: PlancH
 
+# Settings and the Backlight colour are kept in flash: write them 5 s after a change, not after the
+# default minute, so they survive pulling the cable soon after (they change rarely: no flash wear)
+preferences:
+  flash_write_interval: 5s
+
 # Menu model (components/planch/menu.h) and PlancH Arcade (arcade.h); also brings in ArduinoJson
 planch:
 
@@ -395,6 +400,7 @@ output:
 light:
   - platform: rgb
     name: "Backlight"
+    restore_mode: RESTORE_DEFAULT_OFF   # last colour, brightness and on/off after a power cut
     red: backlight_r
     green: backlight_g
     blue: backlight_b
