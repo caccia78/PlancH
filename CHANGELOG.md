@@ -16,6 +16,8 @@ the back of the board.
 - Desk stand: 3D-printed frame that holds the board at 20°, with light slots for the backlight.
 - Wall mount: ring bracket glued behind the board and a base stuck to the wall, held by magnets;
   the backlight shines on the wall around it.
+- Desk stand: a seventh support between the Up and Right keys, so the board no longer tips in
+  the frame when those keys are pressed.
 
 ### Firmware
 
@@ -54,8 +56,12 @@ the back of the board.
 - Clock on the Scene 4 key: day, date, time, room and outdoor temperature, today's weather icon
   with min and max, in English or Italian
   (settings **Scene 4 key** and **Language**); the package finds each panel's room by itself.
+  The screen turns off after 30 s like the menu; the next key shows the clock again.
+- Backlight and settings kept after a power cut: the Backlight light restores its colour and
+  on/off, and settings are written to flash 5 s after a change (was 1 min).
 - PlancH Arcade: four hidden games (Invaders, Echo, Reflex, Dash), opened by holding OK and Back
-  for 3 s, with a best score each kept in the panel's memory.
+  for 3 s, with a best score each kept in the panel's memory and shown in Home Assistant
+  (sensors Invaders best, Echo best, Reflex best, Dash best).
 - Scene LED brightness: two settings on the panel's device page, for the active scene and for
   the other assigned keys.
 - Backlight off: the backlight LEDs can turn off by themselves, with the screen or after 5 min,

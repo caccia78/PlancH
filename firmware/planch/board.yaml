@@ -175,8 +175,46 @@ interval:
             for (int i = 0; i < a.games(); i++) a.set_best(i, id(arcade_best)[i]);
           }
           if (a.loop(millis())) id(oled).update();
-          for (int i = 0; i < a.games(); i++)
-            if (a.best(i) != id(arcade_best)[i]) id(arcade_best)[i] = a.best(i);
+          // Best scores to the panel's memory and to Home Assistant (no record yet: unknown)
+          sensor::Sensor *shown[] = {id(best_invaders), id(best_echo), id(best_reflex), id(best_dash)};
+          static bool sent = false;
+          for (int i = 0; i < a.games(); i++) {
+            bool changed = a.best(i) != id(arcade_best)[i];
+            if (changed) id(arcade_best)[i] = a.best(i);
+            if ((changed || !sent) && i < 4) shown[i]->publish_state(a.best(i) ? float(a.best(i)) : NAN);
+          }
+          sent = true;
+
+# Best scores of PlancH Arcade in Home Assistant, in the order of the list of games
+sensor:
+  - platform: template
+    id: best_invaders
+    name: "Invaders best"
+    icon: mdi:space-invaders
+    unit_of_measurement: "pts"
+    accuracy_decimals: 0
+    update_interval: never
+  - platform: template
+    id: best_echo
+    name: "Echo best"
+    icon: mdi:repeat
+    unit_of_measurement: "rounds"
+    accuracy_decimals: 0
+    update_interval: never
+  - platform: template
+    id: best_reflex
+    name: "Reflex best"
+    icon: mdi:timer-outline
+    unit_of_measurement: "ms"
+    accuracy_decimals: 0
+    update_interval: never
+  - platform: template
+    id: best_dash
+    name: "Dash best"
+    icon: mdi:run-fast
+    unit_of_measurement: "m"
+    accuracy_decimals: 0
+    update_interval: never
 
 esp32_touch:
   # ESP32-S3: with the default 8 ms the counter saturates (fixed value 4194303); ESPHome suggests 0.25 ms

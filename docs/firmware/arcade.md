@@ -2,6 +2,8 @@
 
 The firmware hides four small games. They use the display, the keys and all 13 LEDs, and they
 keep one best score each in the panel's memory. Nothing to install: they come with the firmware.
+The best scores are also sensors in Home Assistant: **Invaders best**, **Echo best**,
+**Reflex best** and **Dash best** on the panel's device page.
 
 ## Open and leave
 

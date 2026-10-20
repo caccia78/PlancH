@@ -192,6 +192,7 @@ LED brightness is limited to 40% in the firmware to keep the USB current low.
 | Language | Select | **English** or **Italiano**: days and months of the clock |
 | Scene LED idle | Number (%) | 0–50 % of the full colour (default 10): the other assigned scene keys; 0 turns them off |
 | Backlight off | Select | On the panel's device page: **Never** (default), **With the screen** (after 30 s without keys), **After 5 min**, **After 15 min**, **After 1 h** without keys. Only the LEDs turn off: the Backlight light stays on, and the next key or touch brings them back |
+| Invaders best, Echo best, Reflex best, Dash best | Sensor | Best scores of [PlancH Arcade](arcade.md) (points, rounds, ms, metres); unknown until the first game. Board only |
 
 ## Calibrating the touch area
 
